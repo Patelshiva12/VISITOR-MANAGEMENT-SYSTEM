@@ -12,11 +12,13 @@ import {
   RotateCcw,
   Activity,
   Save,
-  Server
+  Server,
+  Archive,
+  FileCheck
 } from 'lucide-react';
 
 export default function Settings() {
-  const { currentGate, resetToDemoData } = useVms();
+  const { currentGate, resetToDemoData, logAudit } = useVms();
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   const [settings, setSettings] = useState({
@@ -26,12 +28,15 @@ export default function Settings() {
     overstayGraceMins: 15,
     autoBlacklistThreshold: 3,
     printerModel: 'Direct Thermal 80mm ESC/POS + PVC Card',
-    dbEncryption: 'AES-256 Encrypted Vault',
-    storageRetentionDays: 365
+    dbEncryption: 'AES-256 Encrypted Vault (Section 13.3)',
+    storageRetentionDays: '365 Days (1 Year ISO Compliance)',
+    biometricArchivalPolicy: 'Auto-Purge Expired Face Embeddings after 90 Days',
+    auditLogImmutable: 'Enabled (Write-Once-Read-Many)'
   });
 
   const handleSave = (e) => {
     e.preventDefault();
+    logAudit('SETTINGS_UPDATED', 'System security policies & biometric calibration updated by Administrator', 'SUCCESS');
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 2500);
   };
@@ -40,14 +45,14 @@ export default function Settings() {
     <div className="max-w-4xl mx-auto space-y-6 pb-12">
       
       {/* Header */}
-      <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl flex items-center justify-between">
+      <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2">
             <Sliders className="w-5 h-5 text-sky-400" />
             <h1 className="text-lg font-black text-white">System Configuration & Biometric Calibration</h1>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Configure biometric hardware thresholds, anti-spoofing sensitivity, and gate pass policies.
+            Configure biometric hardware thresholds, anti-spoofing sensitivity, and data retention policies (Section 13).
           </p>
         </div>
 
@@ -59,8 +64,8 @@ export default function Settings() {
 
       <form onSubmit={handleSave} className="space-y-6">
         
-        {/* Section 1: Biometric Calibration */}
-        <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-5">
+        {/* Section 1: Biometric Calibration (Section 5) */}
+        <div className="bg-slate-900 border border-slate-800 p-6 sm:p-8 rounded-3xl space-y-5">
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 border-b border-slate-800 pb-3">
             <Camera className="w-4 h-4 text-sky-400" /> 1. Facial Recognition & Liveness Calibration (ArcFace + SCRFD)
           </h3>
@@ -89,7 +94,7 @@ export default function Settings() {
               <select
                 value={settings.livenessSensitivity}
                 onChange={(e) => setSettings({ ...settings, livenessSensitivity: e.target.value })}
-                className="w-full bg-slate-950 text-xs px-3 py-2.5 rounded-xl border border-slate-700 text-white focus:outline-none focus:border-sky-500"
+                className="w-full bg-slate-950 text-xs px-3.5 py-2.5 rounded-xl border border-slate-700 text-white focus:outline-none focus:border-sky-500"
               >
                 <option value="High (3D Depth + Silent Blink)">Strict: 3D Depth + Micro-Texture + Silent Blink</option>
                 <option value="Medium (Texture Analysis)">Standard: Texture Analysis & Surface Reflection</option>
@@ -103,7 +108,7 @@ export default function Settings() {
               <select
                 value={settings.cameraResolution}
                 onChange={(e) => setSettings({ ...settings, cameraResolution: e.target.value })}
-                className="w-full bg-slate-950 text-xs px-3 py-2.5 rounded-xl border border-slate-700 text-white focus:outline-none focus:border-sky-500"
+                className="w-full bg-slate-950 text-xs px-3.5 py-2.5 rounded-xl border border-slate-700 text-white focus:outline-none focus:border-sky-500"
               >
                 <option value="3840 x 2160 (8 Megapixels)">4K UHD (3840 x 2160 @ 30 FPS)</option>
                 <option value="1920 x 1080 (1080p FHD)">FHD (1920 x 1080 @ 60 FPS)</option>
@@ -118,25 +123,53 @@ export default function Settings() {
                 type="number"
                 value={settings.overstayGraceMins}
                 onChange={(e) => setSettings({ ...settings, overstayGraceMins: Number(e.target.value) })}
-                className="w-full bg-slate-950 text-xs px-3 py-2.5 rounded-xl border border-slate-700 text-white focus:outline-none focus:border-sky-500"
+                className="w-full bg-slate-950 text-xs px-3.5 py-2.5 rounded-xl border border-slate-700 text-white focus:outline-none focus:border-sky-500"
               />
             </div>
           </div>
         </div>
 
-        {/* Section 2: Gate Pass & Security Policy */}
-        <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-5">
+        {/* Section 2: Security & Data Protection Policy (Section 13) */}
+        <div className="bg-slate-900 border border-slate-800 p-6 sm:p-8 rounded-3xl space-y-5">
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 border-b border-slate-800 pb-3">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" /> 2. Gate Pass & Hardware Integration
+            <Archive className="w-4 h-4 text-purple-400" /> 2. Data Protection, Retention & Archival Policy (Section 13.5)
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1">Pass Printer Driver Mode</label>
+              <label className="text-xs font-semibold text-slate-300 block mb-1">Visitor Records Retention Period</label>
+              <select
+                value={settings.storageRetentionDays}
+                onChange={(e) => setSettings({ ...settings, storageRetentionDays: e.target.value })}
+                className="w-full bg-slate-950 text-xs px-3.5 py-2.5 rounded-xl border border-slate-700 text-white focus:outline-none focus:border-sky-500"
+              >
+                <option value="90 Days (Quarterly Purge)">90 Days (Quarterly Purge)</option>
+                <option value="180 Days (Half-Yearly)">180 Days (Half-Yearly)</option>
+                <option value="365 Days (1 Year ISO Compliance)">365 Days (1 Year ISO Compliance)</option>
+                <option value="3 Years (Extended Legal Hold)">3 Years (Extended Legal Hold)</option>
+                <option value="7 Years (Statutory Audit Archive)">7 Years (Statutory Audit Archive)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-slate-300 block mb-1">Biometric Vault Privacy Policy</label>
+              <select
+                value={settings.biometricArchivalPolicy}
+                onChange={(e) => setSettings({ ...settings, biometricArchivalPolicy: e.target.value })}
+                className="w-full bg-slate-950 text-xs px-3.5 py-2.5 rounded-xl border border-slate-700 text-white focus:outline-none focus:border-sky-500"
+              >
+                <option value="Auto-Purge Expired Face Embeddings after 90 Days">Auto-Purge Expired Face Embeddings after 90 Days</option>
+                <option value="Retain Permanent Enrolled Templates">Retain Permanent Enrolled Templates</option>
+                <option value="Anonymize Facial Hashes on Visit Closure">Anonymize Facial Hashes on Visit Closure</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-slate-300 block mb-1">Pass Printer Mode</label>
               <select
                 value={settings.printerModel}
                 onChange={(e) => setSettings({ ...settings, printerModel: e.target.value })}
-                className="w-full bg-slate-950 text-xs px-3 py-2.5 rounded-xl border border-slate-700 text-white focus:outline-none focus:border-sky-500"
+                className="w-full bg-slate-950 text-xs px-3.5 py-2.5 rounded-xl border border-slate-700 text-white focus:outline-none focus:border-sky-500"
               >
                 <option value="Direct Thermal 80mm ESC/POS + PVC Card">Direct Thermal 80mm ESC/POS & PVC Badges</option>
                 <option value="A4 Laser Sheet Printer">Standard A4 Laser Sheet</option>
@@ -144,12 +177,12 @@ export default function Settings() {
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1">Biometric Vault Encryption</label>
+              <label className="text-xs font-semibold text-slate-300 block mb-1">Biometric Encryption Standard (Section 13.3)</label>
               <input
                 type="text"
                 disabled
                 value={settings.dbEncryption}
-                className="w-full bg-slate-950/60 text-xs px-3 py-2.5 rounded-xl border border-slate-800 text-emerald-400 font-mono font-bold cursor-not-allowed"
+                className="w-full bg-slate-950/60 text-xs px-3.5 py-2.5 rounded-xl border border-slate-800 text-emerald-400 font-mono font-bold cursor-not-allowed"
               />
             </div>
           </div>

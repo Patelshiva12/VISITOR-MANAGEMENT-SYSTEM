@@ -15,7 +15,9 @@ import {
   Filter,
   ArrowRight,
   ShieldCheck,
-  UserCheck
+  UserCheck,
+  Tag,
+  Camera
 } from 'lucide-react';
 import { formatTimeOnly, formatDateOnly, formatDuration, getElapsedMinutes } from '../utils/formatters';
 import BiometricScannerModal from '../components/BiometricScannerModal';
@@ -28,16 +30,19 @@ export default function GuardKiosk() {
     visitors, 
     currentGate, 
     checkOutVisitor,
-    checkInVisitor
+    checkInVisitor,
+    logAudit
   } = useVms();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('ALL'); // 'ALL' | 'INSIDE' | 'APPROVED' | 'PENDING'
+  const [selectedCategory, setSelectedCategory] = useState('ALL');
   
   // Modals
   const [verifyingVisit, setVerifyingVisit] = useState(null);
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [activePassVisit, setActivePassVisit] = useState(null);
+  const [exitVerifyVisit, setExitVerifyVisit] = useState(null);
 
   // Filter visits
   const filteredVisits = visits.filter(v => {
@@ -49,6 +54,8 @@ export default function GuardKiosk() {
 
     if (!matchesSearch) return false;
 
+    if (selectedCategory !== 'ALL' && v.visitorCategory !== selectedCategory) return false;
+
     if (activeTab === 'INSIDE') return v.status === 'CHECKED_IN';
     if (activeTab === 'APPROVED') return v.status === 'APPROVED';
     if (activeTab === 'PENDING') return v.status === 'PENDING';
@@ -59,11 +66,21 @@ export default function GuardKiosk() {
   const approvedCount = visits.filter(v => v.status === 'APPROVED').length;
   const pendingCount = visits.filter(v => v.status === 'PENDING').length;
 
+  const handlePrintPass = (visit) => {
+    logAudit('PASS_REPRINTED', 'Gate pass reprint initiated for ' + visit.visitorName + ' (' + visit.passNumber + ')', 'INFO', currentGate);
+    setActivePassVisit(visit);
+  };
+
+  const handleConfirmExit = (visit) => {
+    checkOutVisitor(visit.id);
+    setExitVerifyVisit(null);
+  };
+
   return (
     <div className="space-y-5 pb-12">
       
       {/* Top Banner / Quick Action Bar */}
-      <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-slate-900 border border-slate-800 p-5 sm:p-6 rounded-3xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -72,7 +89,7 @@ export default function GuardKiosk() {
             </h1>
           </div>
           <p className="text-xs text-slate-400 mt-0.5">
-            Rapid Biometric Verification, Identity Matching, and Gate Pass Issuance
+            Rapid Biometric Verification, Identity Matching, and Gate Pass Issuance (Proposal Section 8)
           </p>
         </div>
 
@@ -93,18 +110,18 @@ export default function GuardKiosk() {
                 alert('No pending approved visitors at the gate.');
               }
             }}
-            className="px-4 py-2.5 bg-gradient-to-r from-sky-600 to-cyan-500 hover:from-sky-500 hover:to-cyan-400 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-sky-500/25 transition-all"
+            className="px-5 py-2.5 bg-gradient-to-r from-sky-600 to-cyan-500 hover:from-sky-500 hover:to-cyan-400 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-sky-500/25 transition-all"
           >
             <Scan className="w-4 h-4" /> Next Biometric Check-In
           </button>
         </div>
       </div>
 
-      {/* Filter Tabs & Search */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+      {/* Filter Tabs & Search Bar */}
+      <div className="flex flex-col lg:flex-row items-center justify-between gap-3">
         
-        {/* Tabs */}
-        <div className="flex items-center gap-1.5 bg-slate-900 p-1 rounded-xl border border-slate-800 w-full sm:w-auto">
+        {/* Status Filter Tabs */}
+        <div className="flex items-center gap-1.5 bg-slate-900 p-1 rounded-2xl border border-slate-800 w-full lg:w-auto overflow-x-auto">
           {[
             { id: 'ALL', label: 'All Records', count: visits.length },
             { id: 'APPROVED', label: 'Ready for Check-In', count: approvedCount, badgeColor: 'bg-sky-500 text-white' },
@@ -114,7 +131,7 @@ export default function GuardKiosk() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={'px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ' + 
+              className={'px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shrink-0 ' + 
                 (activeTab === tab.id 
                   ? 'bg-slate-800 text-white shadow-sm' 
                   : 'text-slate-400 hover:text-slate-200')}
@@ -127,26 +144,44 @@ export default function GuardKiosk() {
           ))}
         </div>
 
-        {/* Search */}
-        <div className="relative w-full sm:w-72">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-          <input
-            type="text"
-            placeholder="Search visitor, phone, pass #..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-900 text-xs pl-9 pr-3 py-2 rounded-xl border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
-          />
+        {/* Category & Search */}
+        <div className="flex items-center gap-2 w-full lg:w-auto">
+          {/* Visitor Category Filter */}
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="bg-slate-900 text-xs px-3 py-2 rounded-xl border border-slate-800 text-sky-400 font-bold focus:outline-none"
+          >
+            <option value="ALL">All Categories</option>
+            <option value="VIP Dignitary / Guest">VIP Guests</option>
+            <option value="Business Client / Partner">Business Clients</option>
+            <option value="Vendor / Service Contractor">Vendors</option>
+            <option value="Audit & Regulatory Inspector">Auditors</option>
+            <option value="Interview Candidate">Candidates</option>
+          </select>
+
+          {/* Search Input */}
+          <div className="relative flex-1 sm:w-72">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+            <input
+              type="text"
+              placeholder="Search visitor, phone, pass #..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-slate-900 text-xs pl-9 pr-3 py-2 rounded-xl border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
+            />
+          </div>
         </div>
+
       </div>
 
       {/* Main Table View */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+      <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-950/80 text-slate-400 font-bold uppercase text-[10px] border-b border-slate-800">
               <tr>
-                <th className="p-4">Visitor Profile</th>
+                <th className="p-4">Visitor Profile & Category</th>
                 <th className="p-4">Pass & Gate</th>
                 <th className="p-4">Host & Purpose</th>
                 <th className="p-4">Status & Time</th>
@@ -174,10 +209,17 @@ export default function GuardKiosk() {
                           <img 
                             src={visit.visitorPhoto} 
                             alt={visit.visitorName} 
-                            className="w-10 h-10 rounded-xl object-cover border border-slate-700 shrink-0"
+                            className="w-11 h-11 rounded-2xl object-cover border border-slate-700 shrink-0"
                           />
                           <div>
-                            <span className="font-bold text-white text-sm block">{visit.visitorName}</span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold text-white text-sm block">{visit.visitorName}</span>
+                              {visit.visitorCategory && (
+                                <span className="text-[9px] px-1.5 py-0.2 bg-sky-500/10 text-sky-400 border border-sky-500/20 rounded font-semibold">
+                                  {visit.visitorCategory.split(' ')[0]}
+                                </span>
+                              )}
+                            </div>
                             <span className="text-[11px] text-slate-400 block">{visit.visitorCompany}</span>
                             <span className="text-[10px] text-slate-500 font-mono">{visit.visitorPhone}</span>
                           </div>
@@ -234,21 +276,17 @@ export default function GuardKiosk() {
                           {visit.status === 'APPROVED' && (
                             <button
                               onClick={() => setVerifyingVisit(visit)}
-                              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
+                              className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all"
                             >
                               <Scan className="w-3.5 h-3.5" /> Biometric Check-In
                             </button>
                           )}
 
-                          {/* 2. If CHECKED_IN => Check-Out */}
+                          {/* 2. If CHECKED_IN => Check-Out (with Exit Biometric option) */}
                           {visit.status === 'CHECKED_IN' && (
                             <button
-                              onClick={() => {
-                                if (confirm('Check-out visitor ' + visit.visitorName + '?')) {
-                                  checkOutVisitor(visit.id);
-                                }
-                              }}
-                              className="px-3 py-1.5 bg-slate-800 hover:bg-rose-600 hover:text-white text-slate-300 rounded-lg text-xs font-bold flex items-center gap-1.5 border border-slate-700 transition-all"
+                              onClick={() => setExitVerifyVisit(visit)}
+                              className="px-3.5 py-1.5 bg-slate-800 hover:bg-rose-600 hover:text-white text-slate-300 rounded-xl text-xs font-bold flex items-center gap-1.5 border border-slate-700 transition-all"
                             >
                               <LogOut className="w-3.5 h-3.5" /> Check-Out
                             </button>
@@ -258,17 +296,17 @@ export default function GuardKiosk() {
                           {visit.status === 'PENDING' && (
                             <button
                               onClick={() => setVerifyingVisit(visit)}
-                              className="px-3 py-1.5 bg-amber-600/30 hover:bg-amber-600 text-amber-300 hover:text-white rounded-lg text-xs font-bold border border-amber-500/40 transition-all"
+                              className="px-3.5 py-1.5 bg-amber-600/30 hover:bg-amber-600 text-amber-300 hover:text-white rounded-xl text-xs font-bold border border-amber-500/40 transition-all"
                             >
                               Check Status
                             </button>
                           )}
 
-                          {/* View Gate Pass */}
+                          {/* View & Print Gate Pass (Logs pass reprint event) */}
                           <button
-                            onClick={() => setActivePassVisit(visit)}
-                            title="View / Print Pass"
-                            className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg border border-slate-700 transition-colors"
+                            onClick={() => handlePrintPass(visit)}
+                            title="Print / View Gate Pass"
+                            className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl border border-slate-700 transition-colors"
                           >
                             <Printer className="w-4 h-4" />
                           </button>
@@ -313,6 +351,44 @@ export default function GuardKiosk() {
           visit={activePassVisit}
           onClose={() => setActivePassVisit(null)}
         />
+      )}
+
+      {/* Exit Biometric Re-Verification Modal (Proposal Section 8) */}
+      {exitVerifyVisit && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center gap-2.5 text-white">
+              <LogOut className="w-5 h-5 text-rose-400" />
+              <h4 className="font-extrabold text-sm">Confirm Exit & Pass Closure</h4>
+            </div>
+            
+            <p className="text-xs text-slate-300">
+              Confirm gate exit for <strong className="text-white">{exitVerifyVisit.visitorName}</strong>. This will deactivate Gate Pass <strong className="text-sky-400">{exitVerifyVisit.passNumber}</strong>.
+            </p>
+
+            {exitVerifyVisit.laptopSerial && exitVerifyVisit.laptopSerial !== 'NONE' && (
+              <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 text-[11px] text-slate-300">
+                <span>Declared Asset Verification:</span>
+                <span className="font-mono font-bold text-sky-400 block mt-0.5">{exitVerifyVisit.laptopSerial} (Check physical laptop)</span>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+              <button
+                onClick={() => setExitVerifyVisit(null)}
+                className="px-3.5 py-1.5 text-xs text-slate-400 hover:text-white"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleConfirmExit(exitVerifyVisit)}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow transition-colors"
+              >
+                Confirm Exit & Close Pass
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>

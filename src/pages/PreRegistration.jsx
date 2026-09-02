@@ -14,12 +14,11 @@ import {
   ArrowRight,
   Sparkles,
   MapPin,
-  RefreshCw
+  Tag
 } from 'lucide-react';
 
 export default function PreRegistration({ setActivePage }) {
   const { hosts, visitors, registerVisitor } = useVms();
-  const [step, setStep] = useState(1);
   const [isSuccess, setIsSuccess] = useState(false);
   const [createdVisit, setCreatedVisit] = useState(null);
 
@@ -29,6 +28,7 @@ export default function PreRegistration({ setActivePage }) {
     email: '',
     company: '',
     address: '',
+    visitorCategory: 'Business Client / Partner', // Proposal Section 4.1 & 7.3
     idProofType: 'Aadhaar Card',
     idProofNumber: '',
     hostId: hosts[0]?.id || 'HST-101',
@@ -54,6 +54,7 @@ export default function PreRegistration({ setActivePage }) {
         email: existing.email || prev.email,
         company: existing.company || prev.company,
         address: existing.address || prev.address,
+        visitorCategory: existing.visitorCategory || prev.visitorCategory,
         idProofType: existing.idProofType || prev.idProofType,
         idProofNumber: existing.idProofNumber || prev.idProofNumber,
         laptopSerial: existing.laptopSerial || prev.laptopSerial,
@@ -71,7 +72,7 @@ export default function PreRegistration({ setActivePage }) {
       }
       streamRef.current = stream;
     } catch (err) {
-      console.warn('Camera not available, keeping sample photo');
+      console.warn('Camera unavailable, keeping sample photo');
       setIsTakingPhoto(false);
     }
   };
@@ -111,6 +112,7 @@ export default function PreRegistration({ setActivePage }) {
         email: formData.email,
         company: formData.company,
         address: formData.address,
+        visitorCategory: formData.visitorCategory,
         idProofType: formData.idProofType,
         idProofNumber: formData.idProofNumber,
         laptopSerial: formData.laptopSerial,
@@ -119,6 +121,7 @@ export default function PreRegistration({ setActivePage }) {
       {
         hostId: formData.hostId,
         purpose: formData.purpose,
+        visitorCategory: formData.visitorCategory,
         expectedDurationMins: formData.expectedDurationMins,
         vehicleNumber: formData.vehicleNumber,
         laptopSerial: formData.laptopSerial,
@@ -132,6 +135,7 @@ export default function PreRegistration({ setActivePage }) {
       visitorName: formData.fullName,
       visitorCompany: formData.company,
       visitorPhone: formData.phone,
+      visitorCategory: formData.visitorCategory,
       visitorPhoto: formData.photoUrl,
       hostName: hosts.find(h => h.id === formData.hostId)?.name || 'Host Authority',
       hostDept: hosts.find(h => h.id === formData.hostId)?.department || 'Administration',
@@ -166,6 +170,10 @@ export default function PreRegistration({ setActivePage }) {
               <span className="font-mono font-bold text-sky-400">{createdVisit.passNumber}</span>
             </div>
             <div className="flex justify-between border-b border-slate-800 pb-2">
+              <span className="text-slate-400">Visitor Category:</span>
+              <span className="font-semibold text-sky-300">{createdVisit.visitorCategory}</span>
+            </div>
+            <div className="flex justify-between border-b border-slate-800 pb-2">
               <span className="text-slate-400">Visitor Name:</span>
               <span className="font-bold text-white">{createdVisit.visitorName}</span>
             </div>
@@ -192,6 +200,7 @@ export default function PreRegistration({ setActivePage }) {
                   email: '',
                   company: '',
                   address: '',
+                  visitorCategory: 'Business Client / Partner',
                   idProofType: 'Aadhaar Card',
                   idProofNumber: '',
                   hostId: hosts[0]?.id || 'HST-101',
@@ -238,10 +247,10 @@ export default function PreRegistration({ setActivePage }) {
 
       <form onSubmit={handleSubmit} className="bg-slate-900 border border-slate-800 p-6 sm:p-8 rounded-3xl shadow-sm space-y-6">
         
-        {/* Step 1: Personal Details */}
+        {/* Step 1: Personal & Category Details */}
         <div className="space-y-4">
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 border-b border-slate-800 pb-2">
-            <User className="w-4 h-4 text-sky-400" /> 1. Visitor Identity & Contact
+            <User className="w-4 h-4 text-sky-400" /> 1. Visitor Identity & Category
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -262,6 +271,22 @@ export default function PreRegistration({ setActivePage }) {
                 />
               </div>
               <span className="text-[10px] text-slate-500 mt-1 block">Type registered phone to auto-fill repeat visitor profile</span>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-slate-300 block mb-1">Visitor Category * (Section 4.1)</label>
+              <select
+                value={formData.visitorCategory}
+                onChange={(e) => setFormData({ ...formData, visitorCategory: e.target.value })}
+                className="w-full bg-slate-950 text-xs px-3 py-2.5 rounded-xl border border-slate-700 text-sky-400 font-bold focus:outline-none focus:border-sky-500"
+              >
+                <option value="VIP Dignitary / Guest">VIP Dignitary / Guest</option>
+                <option value="Business Client / Partner">Business Client / Partner</option>
+                <option value="Vendor / Service Contractor">Vendor / Service Contractor</option>
+                <option value="Audit & Regulatory Inspector">Audit & Regulatory Inspector</option>
+                <option value="Interview Candidate">Interview Candidate</option>
+                <option value="Equipment Delivery / Logistics">Equipment Delivery / Logistics</option>
+              </select>
             </div>
 
             <div>
@@ -304,13 +329,13 @@ export default function PreRegistration({ setActivePage }) {
               </div>
             </div>
 
-            <div className="sm:col-span-2">
-              <label className="text-xs font-semibold text-slate-300 block mb-1">Permanent Residential / Office Address</label>
+            <div>
+              <label className="text-xs font-semibold text-slate-300 block mb-1">Permanent Address</label>
               <div className="relative">
                 <MapPin className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
                 <input
                   type="text"
-                  placeholder="e.g. Sector 25, Cyber City, Gurgaon, Haryana"
+                  placeholder="e.g. Sector 25, Gurgaon, Haryana"
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                   className="w-full bg-slate-950 text-xs pl-9 pr-3 py-2.5 rounded-xl border border-slate-700 text-white focus:outline-none focus:border-sky-500"
@@ -346,7 +371,7 @@ export default function PreRegistration({ setActivePage }) {
           </div>
         </div>
 
-        {/* Step 2: Live Facial Biometric Capture */}
+        {/* Step 2: Facial Biometric Capture */}
         <div className="space-y-3">
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 border-b border-slate-800 pb-2">
             <Camera className="w-4 h-4 text-sky-400" /> 2. Facial Biometric Reference Image
@@ -398,7 +423,7 @@ export default function PreRegistration({ setActivePage }) {
         {/* Step 3: Visit Information & Equipment */}
         <div className="space-y-4">
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 border-b border-slate-800 pb-2">
-            <Building2 className="w-4 h-4 text-sky-400" /> 3. Visit Information & Equipment Declaration
+            <Building2 className="w-4 h-4 text-sky-400" /> 3. Visit Logistics & Equipment Declaration
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

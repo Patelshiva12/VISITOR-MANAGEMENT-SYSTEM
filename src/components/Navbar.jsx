@@ -11,9 +11,11 @@ import {
   Sliders,
   LogOut,
   Home,
-  User,
-  ExternalLink
+  Bell,
+  Sparkles
 } from 'lucide-react';
+import ProposalStagesModal from './ProposalStagesModal';
+import NotificationsDrawer from './NotificationsDrawer';
 
 export default function Navbar({ activePage, setActivePage }) {
   const { 
@@ -26,10 +28,12 @@ export default function Navbar({ activePage, setActivePage }) {
     visits,
     currentUser,
     logout,
-    isAuthenticated
+    auditLogs
   } = useVms();
 
   const [time, setTime] = useState(new Date());
+  const [stagesModalOpen, setStagesModalOpen] = useState(false);
+  const [notifDrawerOpen, setNotifDrawerOpen] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
@@ -37,6 +41,7 @@ export default function Navbar({ activePage, setActivePage }) {
   }, []);
 
   const pendingCount = visits.filter(v => v.status === 'PENDING').length;
+  const criticalAlertsCount = activeAlerts.length + auditLogs.filter(l => l.severity === 'CRITICAL').length;
 
   return (
     <header className="bg-slate-900 border-b border-slate-800 text-slate-100 sticky top-0 z-40 px-4 py-2.5 flex items-center justify-between no-print">
@@ -63,34 +68,42 @@ export default function Navbar({ activePage, setActivePage }) {
         </div>
       </div>
 
-      {/* Center: Live Station Status & Clock */}
-      <div className="hidden md:flex items-center gap-6">
+      {/* Center: Live Station Status, Clock & 10-Stages Button */}
+      <div className="hidden md:flex items-center gap-4">
+        
+        {/* Proposal 10-Stages Compliance Button */}
+        <button
+          onClick={() => setStagesModalOpen(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-sky-600/20 to-cyan-500/20 hover:from-sky-600/30 hover:to-cyan-500/30 text-sky-300 border border-sky-500/40 rounded-xl text-xs font-bold transition-all shadow-sm"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-sky-400 animate-pulse" />
+          <span>10 Stages Proposal Compliance</span>
+        </button>
+
         <div className="flex items-center gap-2 text-xs bg-slate-950/60 px-3 py-1.5 rounded-lg border border-slate-800">
           <Radio className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-          <span className="text-slate-400 font-medium">Gate Terminal:</span>
+          <span className="text-slate-400 font-medium">Gate:</span>
           <select 
             value={currentGate}
             onChange={(e) => setCurrentGate(e.target.value)}
-            className="bg-transparent font-semibold text-sky-400 focus:outline-none cursor-pointer"
+            className="bg-transparent font-semibold text-sky-400 focus:outline-none cursor-pointer text-xs"
           >
-            <option value="Main Gate 01" className="bg-slate-900 text-white">Main Gate 01 (Front)</option>
-            <option value="North Gate 02" className="bg-slate-900 text-white">North Gate 02 (R&D)</option>
+            <option value="Main Gate 01" className="bg-slate-900 text-white">Main Gate 01</option>
+            <option value="North Gate 02" className="bg-slate-900 text-white">North Gate 02</option>
             <option value="VIP Lobby" className="bg-slate-900 text-white">VIP Lobby</option>
           </select>
         </div>
 
         <div className="flex items-center gap-2 text-xs bg-slate-950/60 px-3 py-1.5 rounded-lg border border-slate-800">
           <Clock className="w-3.5 h-3.5 text-sky-400" />
-          <span className="font-mono text-slate-200">
+          <span className="font-mono text-slate-200 text-xs">
             {time.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
           </span>
-          <span className="text-slate-500">|</span>
-          <span className="text-slate-400">{time.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</span>
         </div>
       </div>
 
-      {/* Right: User Profile, Role Switcher & System Actions */}
-      <div className="flex items-center gap-2.5">
+      {/* Right: User Profile, Notifications, Role Switcher & System Actions */}
+      <div className="flex items-center gap-2">
         
         {/* Role Switcher Pill */}
         <div className="hidden lg:flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
@@ -131,6 +144,20 @@ export default function Navbar({ activePage, setActivePage }) {
             );
           })}
         </div>
+
+        {/* Notifications Bell Icon */}
+        <button
+          onClick={() => setNotifDrawerOpen(true)}
+          title="View Security Alerts & Notifications"
+          className="p-2 text-slate-400 hover:text-white bg-slate-950 hover:bg-slate-800 rounded-lg border border-slate-800 transition-colors relative"
+        >
+          <Bell className="w-4 h-4" />
+          {criticalAlertsCount > 0 && (
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white font-mono font-bold text-[9px] rounded-full flex items-center justify-center animate-pulse">
+              {criticalAlertsCount}
+            </span>
+          )}
+        </button>
 
         {/* Home / Landing button */}
         <button
@@ -174,6 +201,19 @@ export default function Navbar({ activePage, setActivePage }) {
         </div>
 
       </div>
+
+      {/* 10-Stages Proposal Compliance Modal */}
+      <ProposalStagesModal 
+        isOpen={stagesModalOpen}
+        onClose={() => setStagesModalOpen(false)}
+        onNavigate={(route) => setActivePage(route)}
+      />
+
+      {/* Real-Time Security Notifications Drawer (Section 9) */}
+      <NotificationsDrawer 
+        isOpen={notifDrawerOpen}
+        onClose={() => setNotifDrawerOpen(false)}
+      />
     </header>
   );
 }
