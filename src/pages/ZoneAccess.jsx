@@ -12,7 +12,10 @@ import {
   CheckCircle2, 
   Users,
   Activity,
-  Layers
+  Layers,
+  MapPin,
+  Volume2,
+  Sliders
 } from 'lucide-react';
 import { formatTimeOnly } from '../utils/formatters';
 
@@ -21,6 +24,7 @@ export default function ZoneAccess() {
   const [selectedVisitId, setSelectedVisitId] = useState(visits[0]?.id || '');
   const [selectedZoneId, setSelectedZoneId] = useState(zones[0]?.id || '');
   const [scanResult, setScanResult] = useState(null);
+  const [activeTab, setActiveTab] = useState('SIMULATOR'); // 'SIMULATOR' | 'MATRIX'
 
   const activeInsideVisits = visits.filter(v => v.status === 'CHECKED_IN');
 
@@ -45,10 +49,24 @@ export default function ZoneAccess() {
           </p>
         </div>
 
-        <span className="text-[11px] font-bold px-3 py-1 bg-purple-500/10 text-purple-400 border border-purple-500/20 rounded-full flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></span>
-          Proposal Section 14 Active
-        </span>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+            <button
+              onClick={() => setActiveTab('SIMULATOR')}
+              className={'px-3 py-1.5 rounded-lg text-xs font-bold transition-all ' + 
+                (activeTab === 'SIMULATOR' ? 'bg-sky-600 text-white shadow' : 'text-slate-400 hover:text-slate-200')}
+            >
+              Turnstile Simulator
+            </button>
+            <button
+              onClick={() => setActiveTab('MATRIX')}
+              className={'px-3 py-1.5 rounded-lg text-xs font-bold transition-all ' + 
+                (activeTab === 'MATRIX' ? 'bg-sky-600 text-white shadow' : 'text-slate-400 hover:text-slate-200')}
+            >
+              Access Matrix
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Security Zones Grid */}
@@ -69,129 +87,173 @@ export default function ZoneAccess() {
 
               <div>
                 <h3 className="font-bold text-white text-sm">{z.name}</h3>
+                <span className="text-[10px] text-sky-400 font-mono block mt-0.5">{z.floor}</span>
                 <p className="text-xs text-slate-400 mt-1">{z.description}</p>
               </div>
 
               <div className="bg-slate-950 p-3 rounded-xl border border-slate-800/80 text-xs flex items-center justify-between">
-                <span className="text-slate-400">Authorized Now:</span>
-                <span className="font-bold text-emerald-400 font-mono">{zoneVisits.length} visitors</span>
+                <span className="text-slate-400">Current Occupancy:</span>
+                <span className="font-bold text-emerald-400 font-mono">{zoneVisits.length} Active</span>
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* Interactive Zone Scanner Simulator & Door Entry Testing */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* Left: Simulator Controller */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
-          <div>
-            <h3 className="font-bold text-white text-sm flex items-center gap-2">
-              <Scan className="w-4 h-4 text-sky-400" />
-              Zone Turnstile / Door Scanner Simulator
-            </h3>
-            <p className="text-xs text-slate-400">
-              Test how the system verifies visitor permissions when scanning at internal zone access doors.
-            </p>
-          </div>
-
-          <div className="space-y-4 text-xs">
-            {/* Pick Visitor */}
+      {/* TAB 1: Simulator */}
+      {activeTab === 'SIMULATOR' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          {/* Simulator Controller */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
             <div>
-              <label className="text-slate-300 font-semibold block mb-1">Select Active Visitor / Pass:</label>
-              <select
-                value={selectedVisitId}
-                onChange={(e) => setSelectedVisitId(e.target.value)}
-                className="w-full bg-slate-950 text-xs px-3 py-2.5 rounded-xl border border-slate-700 text-white focus:outline-none focus:border-sky-500"
-              >
-                {visits.map(v => (
-                  <option key={v.id} value={v.id}>
-                    {v.visitorName} ({v.passNumber}) � {v.status}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Pick Target Zone Door */}
-            <div>
-              <label className="text-slate-300 font-semibold block mb-1">Select Access Door / Security Zone:</label>
-              <select
-                value={selectedZoneId}
-                onChange={(e) => setSelectedZoneId(e.target.value)}
-                className="w-full bg-slate-950 text-xs px-3 py-2.5 rounded-xl border border-slate-700 text-white focus:outline-none focus:border-sky-500"
-              >
-                {zones.map(z => (
-                  <option key={z.id} value={z.id}>
-                    {z.code}: {z.name} ({z.securityLevel})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Test Trigger Button */}
-            <button
-              onClick={handleTestDoorScan}
-              className="w-full py-2.5 bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-sky-600/25 flex items-center justify-center gap-2 transition-all"
-            >
-              <Scan className="w-4 h-4" /> Simulate Turnstile / Door Scan
-            </button>
-          </div>
-
-          {/* Test Scan Result Feedback */}
-          {scanResult && (
-            <div className={'p-4 rounded-xl border text-xs space-y-2 animate-in fade-in duration-200 ' + 
-              (scanResult.success ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : 'bg-rose-500/10 border-rose-500/30 text-rose-300')}>
-              <div className="flex items-center gap-2 font-bold text-sm">
-                {scanResult.success ? <CheckCircle2 className="w-5 h-5 text-emerald-400" /> : <AlertTriangle className="w-5 h-5 text-rose-400" />}
-                <span>{scanResult.message}</span>
-              </div>
-              <p className="text-[11px] text-slate-300">
-                {scanResult.success 
-                  ? 'Turnstile unlocked. Access event recorded in immutable audit logs.' 
-                  : 'Alarm triggered! Guard dispatched and security alert generated in real-time.'}
+              <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                <Scan className="w-4 h-4 text-sky-400" />
+                Zone Door / Turnstile Scanner Simulator
+              </h3>
+              <p className="text-xs text-slate-400">
+                Select a visitor pass and test scanning at interior building zone entry turnstiles.
               </p>
             </div>
-          )}
 
-        </div>
+            <div className="space-y-4 text-xs">
+              <div>
+                <label className="text-slate-300 font-semibold block mb-1">Select Visitor / Pass:</label>
+                <select
+                  value={selectedVisitId}
+                  onChange={(e) => setSelectedVisitId(e.target.value)}
+                  className="w-full bg-slate-950 text-xs px-3.5 py-2.5 rounded-xl border border-slate-700 text-white focus:outline-none focus:border-sky-500"
+                >
+                  {visits.map(v => (
+                    <option key={v.id} value={v.id}>
+                      {v.visitorName} ({v.passNumber}) � {v.status}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-        {/* Right: Security Breach Feed */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-bold text-white text-sm flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4 text-rose-400" />
-              Zone Security Exceptions & Breaches
-            </h3>
-            <span className="text-xs text-slate-400 font-mono">{activeAlerts.length} active</span>
+              <div>
+                <label className="text-slate-300 font-semibold block mb-1">Select Zone Entry Point:</label>
+                <select
+                  value={selectedZoneId}
+                  onChange={(e) => setSelectedZoneId(e.target.value)}
+                  className="w-full bg-slate-950 text-xs px-3.5 py-2.5 rounded-xl border border-slate-700 text-white focus:outline-none focus:border-sky-500"
+                >
+                  {zones.map(z => (
+                    <option key={z.id} value={z.id}>
+                      {z.code}: {z.name} ({z.securityLevel})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                onClick={handleTestDoorScan}
+                className="w-full py-3 bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-sky-600/25 flex items-center justify-center gap-2 transition-all"
+              >
+                <Scan className="w-4 h-4" /> Simulate Turnstile / Door Access
+              </button>
+            </div>
+
+            {scanResult && (
+              <div className={'p-4 rounded-xl border text-xs space-y-2 animate-in fade-in duration-200 ' + 
+                (scanResult.success ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : 'bg-rose-500/10 border-rose-500/30 text-rose-300')}>
+                <div className="flex items-center gap-2 font-bold text-sm">
+                  {scanResult.success ? <CheckCircle2 className="w-5 h-5 text-emerald-400" /> : <AlertTriangle className="w-5 h-5 text-rose-400" />}
+                  <span>{scanResult.message}</span>
+                </div>
+                <p className="text-[11px] text-slate-300">
+                  {scanResult.success 
+                    ? 'Turnstile unlocked. Access event recorded in audit logs.' 
+                    : 'Security breach recorded! Visual & audible alert triggered in Security Command Center.'}
+                </p>
+              </div>
+            )}
           </div>
 
-          {activeAlerts.length === 0 ? (
-            <div className="p-8 text-center bg-slate-950/60 rounded-xl border border-slate-800 text-slate-500 text-xs space-y-2">
-              <CheckCircle2 className="w-8 h-8 text-emerald-500/40 mx-auto" />
-              <span>No unauthorized zone breaches detected. All visitors in assigned zones.</span>
+          {/* Real-time Exception & Alert Stream */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                <ShieldAlert className="w-4 h-4 text-rose-400" />
+                Live Zone Security Exceptions
+              </h3>
+              <span className="text-xs text-slate-400 font-mono">{activeAlerts.length} Active Incidents</span>
             </div>
-          ) : (
-            <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-              {activeAlerts.map(alert => (
-                <div key={alert.id} className="p-3 bg-rose-950/30 border border-rose-500/40 rounded-xl text-xs space-y-1">
-                  <div className="flex justify-between items-center">
-                    <span className="font-bold text-white flex items-center gap-1.5">
-                      <AlertTriangle className="w-3.5 h-3.5 text-rose-400" /> {alert.visitorName}
-                    </span>
-                    <span className="font-mono text-[10px] text-rose-400">{formatTimeOnly(alert.timestamp)}</span>
-                  </div>
-                  <div className="text-slate-300 text-[11px]">
-                    Attempted entry into: <strong className="text-rose-300">{alert.zoneName} ({alert.zoneCode})</strong>
-                  </div>
-                  <div className="text-[10px] text-slate-500">Security Gate: {alert.gate}</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
 
-      </div>
+            {activeAlerts.length === 0 ? (
+              <div className="p-8 text-center bg-slate-950/60 rounded-xl border border-slate-800 text-slate-500 text-xs space-y-2">
+                <CheckCircle2 className="w-8 h-8 text-emerald-500/40 mx-auto" />
+                <span>No unauthorized zone entries detected. All visitors in permitted areas.</span>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                {activeAlerts.map(alert => (
+                  <div key={alert.id} className="p-3.5 bg-rose-950/30 border border-rose-500/40 rounded-xl text-xs space-y-1">
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-white flex items-center gap-1.5">
+                        <AlertTriangle className="w-3.5 h-3.5 text-rose-400" /> {alert.visitorName}
+                      </span>
+                      <span className="font-mono text-[10px] text-rose-400">{formatTimeOnly(alert.timestamp)}</span>
+                    </div>
+                    <div className="text-slate-300 text-[11px]">
+                      Unauthorized Access into: <strong className="text-rose-300">{alert.zoneName} ({alert.zoneCode})</strong>
+                    </div>
+                    <div className="text-[10px] text-slate-500">Security Gate: {alert.gate}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+        </div>
+      )}
+
+      {/* TAB 2: Access Matrix Table */}
+      {activeTab === 'MATRIX' && (
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden p-5 space-y-4">
+          <h3 className="font-bold text-white text-sm">Zone Permission Matrix by Visitor</h3>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-950/80 text-slate-400 font-bold uppercase text-[10px] border-b border-slate-800">
+                <tr>
+                  <th className="p-3">Visitor Name</th>
+                  <th className="p-3">Company</th>
+                  <th className="p-3 text-center">Z-REC (Public)</th>
+                  <th className="p-3 text-center">Z-OFF (Office)</th>
+                  <th className="p-3 text-center">Z-LAB (R&D)</th>
+                  <th className="p-3 text-center">Z-DC (Server Vault)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60">
+                {visits.map(v => (
+                  <tr key={v.id} className="hover:bg-slate-800/40">
+                    <td className="p-3 font-bold text-white">{v.visitorName}</td>
+                    <td className="p-3 text-slate-400">{v.visitorCompany}</td>
+                    {['ZONE-01', 'ZONE-02', 'ZONE-03', 'ZONE-04'].map(zId => {
+                      const isPermitted = v.allowedZones && v.allowedZones.includes(zId);
+                      return (
+                        <td key={zId} className="p-3 text-center">
+                          {isPermitted ? (
+                            <span className="inline-block px-2 py-0.5 bg-emerald-500/20 text-emerald-400 font-bold text-[10px] rounded">
+                              ALLOWED
+                            </span>
+                          ) : (
+                            <span className="inline-block px-2 py-0.5 bg-slate-800 text-slate-500 font-bold text-[10px] rounded">
+                              RESTRICTED
+                            </span>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
     </div>
   );

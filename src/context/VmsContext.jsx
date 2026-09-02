@@ -4,10 +4,9 @@ import { initialVisitors, initialVisits, initialHosts, initialZones, initialAudi
 const VmsContext = createContext();
 
 export function VmsProvider({ children }) {
-  // Authentication & Session State
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     const saved = localStorage.getItem('vms_auth');
-    return saved !== null ? JSON.parse(saved) : true; // Default true so user can explore directly or switch
+    return saved !== null ? JSON.parse(saved) : true;
   });
 
   const [currentUser, setCurrentUser] = useState(() => {
@@ -21,12 +20,10 @@ export function VmsProvider({ children }) {
     };
   });
 
-  // Role & Gate state
   const [currentUserRole, setCurrentUserRole] = useState(() => localStorage.getItem('vms_role') || 'guard');
   const [currentGate, setCurrentGate] = useState(() => localStorage.getItem('vms_gate') || 'Main Gate 01');
   const [currentHostId, setCurrentHostId] = useState('HST-101');
 
-  // Core entities
   const [visitors, setVisitors] = useState(() => {
     const saved = localStorage.getItem('vms_visitors');
     return saved ? JSON.parse(saved) : initialVisitors;
@@ -47,7 +44,6 @@ export function VmsProvider({ children }) {
 
   const [activeAlerts, setActiveAlerts] = useState([]);
 
-  // Sync to local storage
   useEffect(() => {
     localStorage.setItem('vms_auth', JSON.stringify(isAuthenticated));
   }, [isAuthenticated]);
@@ -76,7 +72,6 @@ export function VmsProvider({ children }) {
     localStorage.setItem('vms_audit_logs', JSON.stringify(auditLogs));
   }, [auditLogs]);
 
-  // Auth Functions
   const login = (role, userDetails = {}, gate = 'Main Gate 01') => {
     const user = {
       name: userDetails.name || (role === 'admin' ? 'System Administrator' : role === 'guard' ? 'Security Guard' : role === 'host' ? 'Host Manager' : 'Visitor User'),
@@ -99,7 +94,6 @@ export function VmsProvider({ children }) {
     logAudit('USER_LOGOUT', 'User ' + prevUser + ' signed out of the system', 'INFO');
   };
 
-  // Helper to add audit log
   const logAudit = (eventType, description, severity = 'INFO', gate = currentGate, performedBy = null) => {
     const actor = performedBy || (currentUser?.name || (currentUserRole === 'guard' ? 'Security Guard (' + currentGate + ')' : currentUserRole === 'admin' ? 'System Administrator' : currentUserRole === 'host' ? 'Host Employee' : 'Visitor Self-Service'));
     const newLog = {
@@ -157,6 +151,7 @@ export function VmsProvider({ children }) {
       gate: currentGate,
       passNumber,
       vehicleNumber: visitData.vehicleNumber || 'N/A',
+      laptopSerial: visitData.laptopSerial || 'NONE',
       verifiedBiometrics: [],
       notes: visitData.notes || 'Pre-registered online'
     };
@@ -166,7 +161,46 @@ export function VmsProvider({ children }) {
     return { visitorId, visitId, passNumber };
   };
 
-  // 2. Approve Visit (Host action)
+  // 2. Direct Update Visitor Profile
+  const updateVisitor = (visitorId, updatedFields) => {
+    setVisitors(prev => prev.map(v => {
+      if (v.id === visitorId) {
+        const updated = { ...v, ...updatedFields };
+        return updated;
+      }
+      return v;
+    }));
+
+    // Cascade updates to visits associated with this visitor
+    setVisits(prev => prev.map(v => {
+      if (v.visitorId === visitorId) {
+        return {
+          ...v,
+          visitorName: updatedFields.fullName || v.visitorName,
+          visitorCompany: updatedFields.company || v.visitorCompany,
+          visitorPhone: updatedFields.phone || v.visitorPhone,
+          visitorPhoto: updatedFields.photoUrl || v.visitorPhoto,
+          laptopSerial: updatedFields.laptopSerial !== undefined ? updatedFields.laptopSerial : v.laptopSerial
+        };
+      }
+      return v;
+    }));
+
+    logAudit('VISITOR_PROFILE_UPDATED', 'Visitor profile ' + visitorId + ' (' + (updatedFields.fullName || 'Record') + ') was updated', 'SUCCESS');
+  };
+
+  // 3. Update Visit Details
+  const updateVisit = (visitId, updatedVisitData) => {
+    setVisits(prev => prev.map(v => {
+      if (v.id === visitId) {
+        return { ...v, ...updatedVisitData };
+      }
+      return v;
+    }));
+    logAudit('VISIT_UPDATED', 'Visit ' + visitId + ' details were updated', 'INFO');
+  };
+
+  // 4. Approve Visit
   const approveVisit = (visitId, allowedZones = null) => {
     setVisits(prev => prev.map(v => {
       if (v.id === visitId) {
@@ -182,7 +216,7 @@ export function VmsProvider({ children }) {
     logAudit('HOST_APPROVAL', 'Visit ' + visitId + ' approved for ' + (target ? target.visitorName : 'Visitor'), 'SUCCESS');
   };
 
-  // 3. Reject Visit (Host action)
+  // 5. Reject Visit
   const rejectVisit = (visitId, reason = 'Host unavailable') => {
     setVisits(prev => prev.map(v => {
       if (v.id === visitId) {
@@ -198,7 +232,7 @@ export function VmsProvider({ children }) {
     logAudit('HOST_REJECTION', 'Visit ' + visitId + ' rejected for ' + (target ? target.visitorName : 'Visitor') + ' (Reason: ' + reason + ')', 'WARNING');
   };
 
-  // 4. Check In Visitor (Guard action with Biometric verification)
+  // 6. Check In Visitor
   const checkInVisitor = (visitId, biometricModes = ['FACE']) => {
     const nowIso = new Date().toISOString();
     setVisits(prev => prev.map(v => {
@@ -217,7 +251,7 @@ export function VmsProvider({ children }) {
     logAudit('CHECK_IN', 'Visitor ' + (target ? target.visitorName : 'Visitor') + ' checked in via ' + biometricModes.join(' + ') + ' at ' + currentGate, 'SUCCESS');
   };
 
-  // 5. Check Out Visitor
+  // 7. Check Out Visitor
   const checkOutVisitor = (visitId) => {
     const nowIso = new Date().toISOString();
     setVisits(prev => prev.map(v => {
@@ -234,7 +268,7 @@ export function VmsProvider({ children }) {
     logAudit('CHECK_OUT', 'Visitor ' + (target ? target.visitorName : 'Visitor') + ' completed visit and checked out at ' + currentGate, 'INFO');
   };
 
-  // 6. Manual Security Override
+  // 8. Manual Security Override
   const manualOverrideCheckIn = (visitId, reason) => {
     const nowIso = new Date().toISOString();
     setVisits(prev => prev.map(v => {
@@ -254,7 +288,7 @@ export function VmsProvider({ children }) {
     logAudit('MANUAL_OVERRIDE', 'Security Override applied for ' + (target ? target.visitorName : 'Visitor') + ' | Reason: ' + reason, 'WARNING');
   };
 
-  // 7. Toggle Blacklist
+  // 9. Toggle Blacklist
   const toggleBlacklist = (visitorId) => {
     let visitorName = '';
     let newStatus = false;
@@ -273,7 +307,7 @@ export function VmsProvider({ children }) {
     );
   };
 
-  // 8. Simulate Zone Scanning & Breach Detection
+  // 10. Simulate Zone Scanning
   const simulateZoneScan = (visitId, zoneId) => {
     const visit = visits.find(v => v.id === visitId);
     const zone = zones.find(z => z.id === zoneId);
@@ -310,7 +344,6 @@ export function VmsProvider({ children }) {
     setActiveAlerts(prev => prev.filter(a => a.id !== alertId));
   };
 
-  // Reset to initial demo seed
   const resetToDemoData = () => {
     localStorage.removeItem('vms_visitors');
     localStorage.removeItem('vms_visits');
@@ -341,6 +374,8 @@ export function VmsProvider({ children }) {
       auditLogs,
       activeAlerts,
       registerVisitor,
+      updateVisitor,
+      updateVisit,
       approveVisit,
       rejectVisit,
       checkInVisitor,

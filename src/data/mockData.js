@@ -1,16 +1,17 @@
 export const initialHosts = [
-  { id: 'HST-101', name: 'Dr. Arvind Menon', department: 'R&D & Engineering', email: 'arvind.m@ilizien.com', cabin: 'Tech Block 3, 4th Floor' },
-  { id: 'HST-102', name: 'Neha Kapoor', department: 'IT Infrastructure & Cloud', email: 'neha.k@ilizien.com', cabin: 'Data Center, Ground Floor' },
-  { id: 'HST-103', name: 'Rajeshwar Rao', department: 'Security & Operations', email: 'rajeshwar.r@ilizien.com', cabin: 'Gate House Control' },
-  { id: 'HST-104', name: 'Pooja Sharma', department: 'Human Resources', email: 'pooja.s@ilizien.com', cabin: 'Admin Block, 2nd Floor' },
-  { id: 'HST-105', name: 'Vikramjit Singh', department: 'Procurement & Finance', email: 'vikram.s@ilizien.com', cabin: 'Corporate Suite 5B' }
+  { id: 'HST-101', name: 'Dr. Arvind Menon', department: 'R&D & Engineering', title: 'VP of Hardware Systems', email: 'arvind.m@ilizien.com', phone: '+91 98765 00101', cabin: 'Tech Block 3, 4th Floor', ext: '4401' },
+  { id: 'HST-102', name: 'Neha Kapoor', department: 'IT Infrastructure & Cloud', title: 'Director of Cyber Security', email: 'neha.k@ilizien.com', phone: '+91 98765 00102', cabin: 'Data Center Control, Ground Floor', ext: '1002' },
+  { id: 'HST-103', name: 'Rajeshwar Rao', department: 'Security & Facilities', title: 'Chief Security Officer', email: 'rajeshwar.r@ilizien.com', phone: '+91 98765 00103', cabin: 'Central Gate Command Room', ext: '9901' },
+  { id: 'HST-104', name: 'Pooja Sharma', department: 'Human Resources', title: 'Head of Talent Acquisition', email: 'pooja.s@ilizien.com', phone: '+91 98765 00104', cabin: 'Admin Block, 2nd Floor (Room 204)', ext: '2204' },
+  { id: 'HST-105', name: 'Vikramjit Singh', department: 'Procurement & Logistics', title: 'Supply Chain Manager', email: 'vikram.s@ilizien.com', phone: '+91 98765 00105', cabin: 'Logistics Bay 2B, Warehouse', ext: '3105' },
+  { id: 'HST-106', name: 'Ananya Deshmukh', department: 'Legal & Compliance', title: 'Senior Regulatory Counsel', email: 'ananya.d@ilizien.com', phone: '+91 98765 00106', cabin: 'Executive Tower, 6th Floor', ext: '6012' }
 ];
 
 export const initialZones = [
-  { id: 'ZONE-01', name: 'Reception & Visitor Lounge', code: 'Z-REC', securityLevel: 'Level 1 (Public)', color: 'emerald', description: 'Main building entrance, security checkpoint and visitor holding lounge.' },
-  { id: 'ZONE-02', name: 'General Office & Meeting Rooms', code: 'Z-OFF', securityLevel: 'Level 2 (Standard)', color: 'sky', description: 'Administrative wing, meeting suites, open workstations, and cafeteria.' },
-  { id: 'ZONE-03', name: 'R&D Embedded Systems Lab', code: 'Z-LAB', securityLevel: 'Level 3 (Restricted)', color: 'amber', description: 'Hardware development, testing benches, prototype assembly line.' },
-  { id: 'ZONE-04', name: 'Data Center & Main Server Vault', code: 'Z-DC', securityLevel: 'Level 4 (Critical)', color: 'rose', description: 'Core server racks, fiber terminations, biometric multi-factor entry portal.' }
+  { id: 'ZONE-01', name: 'Reception & Visitor Lounge', code: 'Z-REC', securityLevel: 'Level 1 (Public)', color: 'emerald', description: 'Main building entrance, security turnstiles, badge printer desk, and holding lobby.', floor: 'Ground Floor' },
+  { id: 'ZONE-02', name: 'General Office & Meeting Rooms', code: 'Z-OFF', securityLevel: 'Level 2 (Standard)', color: 'sky', description: 'Administrative wing, meeting suites, open workstations, cafeteria, and conference hall.', floor: '1st & 2nd Floors' },
+  { id: 'ZONE-03', name: 'R&D Embedded Systems Lab', code: 'Z-LAB', securityLevel: 'Level 3 (Restricted)', color: 'amber', description: 'Hardware development, testing benches, prototype assembly line, and clean room.', floor: '3rd & 4th Floors' },
+  { id: 'ZONE-04', name: 'Data Center & Main Server Vault', code: 'Z-DC', securityLevel: 'Level 4 (Critical)', color: 'rose', description: 'Core server racks, fiber terminations, biometric multi-factor mantrap entry door.', floor: 'Basement Level B1' }
 ];
 
 const now = new Date();
@@ -27,8 +28,11 @@ export const initialVisitors = [
     photoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
     idProofType: 'Aadhaar Card',
     idProofNumber: 'XXXX-XXXX-4819',
+    address: 'DLF Phase 2, Sector 25, Gurgaon, Haryana 122002',
     isBlacklisted: false,
-    enrolledBiometrics: { face: true, fingerprint: true, iris: false }
+    enrolledBiometrics: { face: true, fingerprint: true, iris: false },
+    biometricHash: 'ARCFACE_EMB_984_F7A1',
+    laptopSerial: 'DELL-LAT-7420-SN9912'
   },
   {
     id: 'VIS-902',
@@ -39,8 +43,11 @@ export const initialVisitors = [
     photoUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&auto=format&fit=crop&q=80',
     idProofType: 'Passport',
     idProofNumber: 'Z8924102',
+    address: 'Indiranagar 100ft Road, Bangalore, Karnataka 560038',
     isBlacklisted: false,
-    enrolledBiometrics: { face: true, fingerprint: true, iris: true }
+    enrolledBiometrics: { face: true, fingerprint: true, iris: true },
+    biometricHash: 'ARCFACE_EMB_992_K8B2',
+    laptopSerial: 'MBP-M3-MAX-CYBER01'
   },
   {
     id: 'VIS-903',
@@ -51,8 +58,11 @@ export const initialVisitors = [
     photoUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80',
     idProofType: 'Driving License',
     idProofNumber: 'DL-0420190038',
+    address: 'Civil Lines, New Delhi 110054',
     isBlacklisted: false,
-    enrolledBiometrics: { face: true, fingerprint: false, iris: false }
+    enrolledBiometrics: { face: true, fingerprint: false, iris: false },
+    biometricHash: 'ARCFACE_EMB_964_S3C9',
+    laptopSerial: 'LENOVO-T14-GEN4'
   },
   {
     id: 'VIS-904',
@@ -63,20 +73,41 @@ export const initialVisitors = [
     photoUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=300&auto=format&fit=crop&q=80',
     idProofType: 'Aadhaar Card',
     idProofNumber: 'XXXX-XXXX-9102',
+    address: 'Powai Business District, Mumbai 400076',
     isBlacklisted: false,
-    enrolledBiometrics: { face: true, fingerprint: true, iris: false }
+    enrolledBiometrics: { face: true, fingerprint: true, iris: false },
+    biometricHash: 'ARCFACE_EMB_978_L1D4',
+    laptopSerial: 'HP-ELITEBOOK-840'
   },
   {
     id: 'VIS-905',
     fullName: 'Devendra Mehta',
     phone: '+91 91234 56780',
     email: 'd.mehta@roguecorp.in',
-    company: 'Apex Logistics',
+    company: 'Apex Logistics Ltd',
     photoUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80',
     idProofType: 'Voter ID',
     idProofNumber: 'EPIC-882910',
+    address: 'Sector 18, Noida, Uttar Pradesh 201301',
     isBlacklisted: true,
-    enrolledBiometrics: { face: true, fingerprint: true, iris: false }
+    enrolledBiometrics: { face: true, fingerprint: true, iris: false },
+    biometricHash: 'ARCFACE_EMB_812_REVOKED',
+    laptopSerial: 'NONE'
+  },
+  {
+    id: 'VIS-906',
+    fullName: 'Kavita Krishnamurthy',
+    phone: '+91 98450 11223',
+    email: 'kavita.k@ey.com',
+    company: 'Ernst & Young LLP',
+    photoUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&auto=format&fit=crop&q=80',
+    idProofType: 'PAN Card',
+    idProofNumber: 'ABCDE1234F',
+    address: 'Bandra Kurla Complex, Mumbai 400051',
+    isBlacklisted: false,
+    enrolledBiometrics: { face: true, fingerprint: true, iris: false },
+    biometricHash: 'ARCFACE_EMB_989_E7A9',
+    laptopSerial: 'THINKPAD-X1-CARBON'
   }
 ];
 
@@ -91,7 +122,7 @@ export const initialVisits = [
     hostId: 'HST-101',
     hostName: 'Dr. Arvind Menon',
     hostDept: 'R&D & Engineering',
-    purpose: 'Quarterly AI Chip Integration Review',
+    purpose: 'Quarterly AI Chip Integration Review & Hardware Verification',
     scheduledTime: getPastDate(90),
     expectedDurationMins: 120,
     checkInTime: getPastDate(75),
@@ -102,7 +133,8 @@ export const initialVisits = [
     passNumber: 'GP-2026-891',
     vehicleNumber: 'HR-26-DQ-1092',
     verifiedBiometrics: ['FACE', 'FINGERPRINT'],
-    notes: 'Escort required for Zone 3'
+    laptopSerial: 'DELL-LAT-7420-SN9912',
+    notes: 'Carrying prototype PCB board. Escort mandatory for Zone 3.'
   },
   {
     id: 'VST-2026-002',
@@ -114,9 +146,9 @@ export const initialVisits = [
     hostId: 'HST-102',
     hostName: 'Neha Kapoor',
     hostDept: 'IT Infrastructure & Cloud',
-    purpose: 'ISO 27001 Physical Security Audit',
+    purpose: 'ISO 27001 Physical Data Center Security Audit',
     scheduledTime: getPastDate(200),
-    expectedDurationMins: 90,
+    expectedDurationMins: 90, // Note: Elapsed is 180 mins => OVERSTAY TRIGGER!
     checkInTime: getPastDate(180),
     checkOutTime: null,
     status: 'CHECKED_IN',
@@ -125,7 +157,8 @@ export const initialVisits = [
     passNumber: 'GP-2026-892',
     vehicleNumber: 'DL-3C-AZ-4411',
     verifiedBiometrics: ['FACE', 'IRIS'],
-    notes: 'Audit badge issued'
+    laptopSerial: 'MBP-M3-MAX-CYBER01',
+    notes: 'Audit badge issued. Authorized for Server Vault (Zone 4).'
   },
   {
     id: 'VST-2026-003',
@@ -136,8 +169,8 @@ export const initialVisits = [
     visitorPhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80',
     hostId: 'HST-103',
     hostName: 'Rajeshwar Rao',
-    hostDept: 'Security & Operations',
-    purpose: 'Biometric Access Sensor Calibration',
+    hostDept: 'Security & Facilities',
+    purpose: 'Biometric Access Turnstile Sensor Calibration & Firmware Update',
     scheduledTime: getFutureDate(30),
     expectedDurationMins: 180,
     checkInTime: null,
@@ -148,7 +181,8 @@ export const initialVisits = [
     passNumber: 'GP-2026-893',
     vehicleNumber: 'HR-51-BK-8800',
     verifiedBiometrics: [],
-    notes: 'VIP fast-track pre-approved'
+    laptopSerial: 'LENOVO-T14-GEN4',
+    notes: 'VIP fast-track pre-approved by Chief Security Officer.'
   },
   {
     id: 'VST-2026-004',
@@ -160,7 +194,7 @@ export const initialVisits = [
     hostId: 'HST-104',
     hostName: 'Pooja Sharma',
     hostDept: 'Human Resources',
-    purpose: 'Campus Recruitment Vendor Alignment',
+    purpose: 'Campus Recruitment Vendor Alignment & Candidate Interviews',
     scheduledTime: getFutureDate(60),
     expectedDurationMins: 60,
     checkInTime: null,
@@ -171,19 +205,20 @@ export const initialVisits = [
     passNumber: 'GP-2026-894',
     vehicleNumber: 'UP-16-CK-2911',
     verifiedBiometrics: [],
-    notes: 'Awaiting host acceptance'
+    laptopSerial: 'HP-ELITEBOOK-840',
+    notes: 'Awaiting host acceptance in Admin Block.'
   },
   {
     id: 'VST-2026-005',
     visitorId: 'VIS-905',
     visitorName: 'Devendra Mehta',
-    visitorCompany: 'Apex Logistics',
+    visitorCompany: 'Apex Logistics Ltd',
     visitorPhone: '+91 91234 56780',
     visitorPhoto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80',
     hostId: 'HST-105',
     hostName: 'Vikramjit Singh',
-    hostDept: 'Procurement & Finance',
-    purpose: 'Material Inward Delivery',
+    hostDept: 'Procurement & Logistics',
+    purpose: 'Material Inward Delivery & Consignment Handover',
     scheduledTime: getPastDate(300),
     expectedDurationMins: 45,
     checkInTime: null,
@@ -194,7 +229,32 @@ export const initialVisits = [
     passNumber: 'GP-2026-895',
     vehicleNumber: 'HR-26-EE-9011',
     verifiedBiometrics: [],
-    notes: 'Rejected by security: Blacklisted identity'
+    laptopSerial: 'NONE',
+    notes: 'Blocked by Security Command: Blacklisted identity profile.'
+  },
+  {
+    id: 'VST-2026-006',
+    visitorId: 'VIS-906',
+    visitorName: 'Kavita Krishnamurthy',
+    visitorCompany: 'Ernst & Young LLP',
+    visitorPhone: '+91 98450 11223',
+    visitorPhoto: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&auto=format&fit=crop&q=80',
+    hostId: 'HST-106',
+    hostName: 'Ananya Deshmukh',
+    hostDept: 'Legal & Compliance',
+    purpose: 'Statutory Corporate Compliance & IP Audit Review',
+    scheduledTime: getFutureDate(120),
+    expectedDurationMins: 90,
+    checkInTime: null,
+    checkOutTime: null,
+    status: 'APPROVED',
+    allowedZones: ['ZONE-01', 'ZONE-02'],
+    gate: 'VIP Lobby',
+    passNumber: 'GP-2026-896',
+    vehicleNumber: 'DL-8C-AA-9900',
+    verifiedBiometrics: [],
+    laptopSerial: 'THINKPAD-X1-CARBON',
+    notes: 'VIP pass with Executive Suite access.'
   }
 ];
 
@@ -203,36 +263,36 @@ export const initialAuditLogs = [
     id: 'LOG-8801',
     timestamp: getPastDate(180),
     eventType: 'BIOMETRIC_VERIFY_SUCCESS',
-    performedBy: 'Security Guard (Desk 01)',
+    performedBy: 'Security Guard (Officer Sandeep)',
     gate: 'North Gate 02',
-    description: 'Facial recognition match 98.8% & Liveness confirmed for Priya Patel',
+    description: 'Facial recognition match 98.8% & Anti-spoof 3D Liveness confirmed for Priya Patel',
     severity: 'SUCCESS'
   },
   {
     id: 'LOG-8802',
     timestamp: getPastDate(180),
     eventType: 'CHECK_IN',
-    performedBy: 'Security Guard (Desk 01)',
+    performedBy: 'Security Guard (Officer Sandeep)',
     gate: 'North Gate 02',
-    description: 'Visitor Priya Patel checked in for Host Neha Kapoor. Gate pass GP-2026-892 generated.',
+    description: 'Visitor Priya Patel checked in for Host Neha Kapoor. Gate pass GP-2026-892 generated. Equipment MBP-M3-MAX-CYBER01 tagged.',
     severity: 'INFO'
   },
   {
     id: 'LOG-8803',
     timestamp: getPastDate(75),
     eventType: 'BIOMETRIC_VERIFY_SUCCESS',
-    performedBy: 'Security Guard (Desk 02)',
+    performedBy: 'Security Guard (Officer Sandeep)',
     gate: 'Main Gate 01',
-    description: 'Multi-modal Face + Fingerprint verified for Rajesh Sharma (SCRFD Latency 12ms)',
+    description: 'Multi-modal Face + Fingerprint verified for Rajesh Sharma (SCRFD Latency: 12ms, ArcFace: 98.4%)',
     severity: 'SUCCESS'
   },
   {
     id: 'LOG-8804',
     timestamp: getPastDate(75),
     eventType: 'CHECK_IN',
-    performedBy: 'Security Guard (Desk 02)',
+    performedBy: 'Security Guard (Officer Sandeep)',
     gate: 'Main Gate 01',
-    description: 'Visitor Rajesh Sharma entered Main Gate. Assigned Zones: Z-REC, Z-OFF, Z-LAB',
+    description: 'Visitor Rajesh Sharma entered Main Gate. Assigned Security Zones: Z-REC, Z-OFF, Z-LAB',
     severity: 'INFO'
   },
   {
@@ -240,8 +300,17 @@ export const initialAuditLogs = [
     timestamp: getPastDate(30),
     eventType: 'HOST_APPROVAL',
     performedBy: 'Rajeshwar Rao (HST-103)',
-    gate: 'System Portal',
+    gate: 'Host Portal',
     description: 'Approved visit VST-2026-003 for Amitabh Verma with VIP fast-track status',
+    severity: 'SUCCESS'
+  },
+  {
+    id: 'LOG-8806',
+    timestamp: getPastDate(15),
+    eventType: 'HOST_APPROVAL',
+    performedBy: 'Ananya Deshmukh (HST-106)',
+    gate: 'Host Portal',
+    description: 'Approved visit VST-2026-006 for Kavita Krishnamurthy (Ernst & Young LLP)',
     severity: 'SUCCESS'
   }
 ];

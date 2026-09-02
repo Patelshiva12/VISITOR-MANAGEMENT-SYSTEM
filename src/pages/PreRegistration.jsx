@@ -9,11 +9,17 @@ import {
   Phone, 
   Mail, 
   Car, 
-  ShieldCheck
+  ShieldCheck,
+  Laptop,
+  ArrowRight,
+  Sparkles,
+  MapPin,
+  RefreshCw
 } from 'lucide-react';
 
 export default function PreRegistration({ setActivePage }) {
   const { hosts, visitors, registerVisitor } = useVms();
+  const [step, setStep] = useState(1);
   const [isSuccess, setIsSuccess] = useState(false);
   const [createdVisit, setCreatedVisit] = useState(null);
 
@@ -22,12 +28,14 @@ export default function PreRegistration({ setActivePage }) {
     phone: '',
     email: '',
     company: '',
+    address: '',
     idProofType: 'Aadhaar Card',
     idProofNumber: '',
     hostId: hosts[0]?.id || 'HST-101',
     purpose: '',
     expectedDurationMins: '60',
     vehicleNumber: '',
+    laptopSerial: '',
     notes: '',
     photoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80'
   });
@@ -45,8 +53,10 @@ export default function PreRegistration({ setActivePage }) {
         fullName: existing.fullName,
         email: existing.email || prev.email,
         company: existing.company || prev.company,
+        address: existing.address || prev.address,
         idProofType: existing.idProofType || prev.idProofType,
         idProofNumber: existing.idProofNumber || prev.idProofNumber,
+        laptopSerial: existing.laptopSerial || prev.laptopSerial,
         photoUrl: existing.photoUrl || prev.photoUrl
       }));
     }
@@ -61,7 +71,7 @@ export default function PreRegistration({ setActivePage }) {
       }
       streamRef.current = stream;
     } catch (err) {
-      console.warn('Camera not available, keeping default sample photo');
+      console.warn('Camera not available, keeping sample photo');
       setIsTakingPhoto(false);
     }
   };
@@ -100,8 +110,10 @@ export default function PreRegistration({ setActivePage }) {
         phone: formData.phone,
         email: formData.email,
         company: formData.company,
+        address: formData.address,
         idProofType: formData.idProofType,
         idProofNumber: formData.idProofNumber,
+        laptopSerial: formData.laptopSerial,
         photoUrl: formData.photoUrl
       },
       {
@@ -109,6 +121,7 @@ export default function PreRegistration({ setActivePage }) {
         purpose: formData.purpose,
         expectedDurationMins: formData.expectedDurationMins,
         vehicleNumber: formData.vehicleNumber,
+        laptopSerial: formData.laptopSerial,
         notes: formData.notes
       }
     );
@@ -153,7 +166,7 @@ export default function PreRegistration({ setActivePage }) {
               <span className="font-mono font-bold text-sky-400">{createdVisit.passNumber}</span>
             </div>
             <div className="flex justify-between border-b border-slate-800 pb-2">
-              <span className="text-slate-400">Visitor:</span>
+              <span className="text-slate-400">Visitor Name:</span>
               <span className="font-bold text-white">{createdVisit.visitorName}</span>
             </div>
             <div className="flex justify-between border-b border-slate-800 pb-2">
@@ -162,7 +175,7 @@ export default function PreRegistration({ setActivePage }) {
             </div>
             <div className="flex justify-between">
               <span className="text-slate-400">Current Status:</span>
-              <span className="px-2 py-0.5 bg-amber-500/20 text-amber-400 font-bold rounded uppercase">
+              <span className="px-2.5 py-0.5 bg-amber-500/20 text-amber-400 font-bold rounded uppercase">
                 Awaiting Host Approval
               </span>
             </div>
@@ -178,12 +191,14 @@ export default function PreRegistration({ setActivePage }) {
                   phone: '',
                   email: '',
                   company: '',
+                  address: '',
                   idProofType: 'Aadhaar Card',
                   idProofNumber: '',
                   hostId: hosts[0]?.id || 'HST-101',
                   purpose: '',
                   expectedDurationMins: '60',
                   vehicleNumber: '',
+                  laptopSerial: '',
                   notes: '',
                   photoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80'
                 });
@@ -221,7 +236,9 @@ export default function PreRegistration({ setActivePage }) {
         </span>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-slate-900 border border-slate-800 p-6 rounded-3xl shadow-sm space-y-6">
+      <form onSubmit={handleSubmit} className="bg-slate-900 border border-slate-800 p-6 sm:p-8 rounded-3xl shadow-sm space-y-6">
+        
+        {/* Step 1: Personal Details */}
         <div className="space-y-4">
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 border-b border-slate-800 pb-2">
             <User className="w-4 h-4 text-sky-400" /> 1. Visitor Identity & Contact
@@ -244,7 +261,7 @@ export default function PreRegistration({ setActivePage }) {
                   className="w-full bg-slate-950 text-xs pl-9 pr-3 py-2.5 rounded-xl border border-slate-700 text-white focus:outline-none focus:border-sky-500"
                 />
               </div>
-              <span className="text-[10px] text-slate-500 mt-1 block">Type phone to auto-fill repeat visitor record</span>
+              <span className="text-[10px] text-slate-500 mt-1 block">Type registered phone to auto-fill repeat visitor profile</span>
             </div>
 
             <div>
@@ -287,6 +304,20 @@ export default function PreRegistration({ setActivePage }) {
               </div>
             </div>
 
+            <div className="sm:col-span-2">
+              <label className="text-xs font-semibold text-slate-300 block mb-1">Permanent Residential / Office Address</label>
+              <div className="relative">
+                <MapPin className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+                <input
+                  type="text"
+                  placeholder="e.g. Sector 25, Cyber City, Gurgaon, Haryana"
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  className="w-full bg-slate-950 text-xs pl-9 pr-3 py-2.5 rounded-xl border border-slate-700 text-white focus:outline-none focus:border-sky-500"
+                />
+              </div>
+            </div>
+
             <div>
               <label className="text-xs font-semibold text-slate-300 block mb-1">Identity Document Type</label>
               <select
@@ -315,6 +346,7 @@ export default function PreRegistration({ setActivePage }) {
           </div>
         </div>
 
+        {/* Step 2: Live Facial Biometric Capture */}
         <div className="space-y-3">
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 border-b border-slate-800 pb-2">
             <Camera className="w-4 h-4 text-sky-400" /> 2. Facial Biometric Reference Image
@@ -363,9 +395,10 @@ export default function PreRegistration({ setActivePage }) {
           </div>
         </div>
 
+        {/* Step 3: Visit Information & Equipment */}
         <div className="space-y-4">
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 border-b border-slate-800 pb-2">
-            <Building2 className="w-4 h-4 text-sky-400" /> 3. Visit Information & Host Assignment
+            <Building2 className="w-4 h-4 text-sky-400" /> 3. Visit Information & Equipment Declaration
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -394,7 +427,7 @@ export default function PreRegistration({ setActivePage }) {
               >
                 <option value="30">30 Minutes (Quick meeting)</option>
                 <option value="60">1 Hour (Standard)</option>
-                <option value="120">2 Hours</option>
+                <option value="120">2 Hours (Review meeting)</option>
                 <option value="240">Half Day (4 Hours)</option>
                 <option value="480">Full Day (8 Hours)</option>
               </select>
@@ -405,7 +438,7 @@ export default function PreRegistration({ setActivePage }) {
               <input
                 type="text"
                 required
-                placeholder="e.g. Annual Audit / Vendor Discussion / Server Maintenance"
+                placeholder="e.g. Annual Audit / AI Chip Integration / Server Maintenance"
                 value={formData.purpose}
                 onChange={(e) => setFormData({ ...formData, purpose: e.target.value })}
                 className="w-full bg-slate-950 text-xs px-3 py-2.5 rounded-xl border border-slate-700 text-white focus:outline-none focus:border-sky-500"
@@ -427,10 +460,24 @@ export default function PreRegistration({ setActivePage }) {
             </div>
 
             <div>
+              <label className="text-xs font-semibold text-slate-300 block mb-1">Declared Laptop Serial / Asset Tag</label>
+              <div className="relative">
+                <Laptop className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+                <input
+                  type="text"
+                  placeholder="e.g. DELL-LAT-7420-SN9912"
+                  value={formData.laptopSerial}
+                  onChange={(e) => setFormData({ ...formData, laptopSerial: e.target.value })}
+                  className="w-full bg-slate-950 text-xs pl-9 pr-3 py-2.5 rounded-xl border border-slate-700 text-white focus:outline-none focus:border-sky-500"
+                />
+              </div>
+            </div>
+
+            <div className="sm:col-span-2">
               <label className="text-xs font-semibold text-slate-300 block mb-1">Special Instructions / Remarks</label>
               <input
                 type="text"
-                placeholder="e.g. Carrying laptop, requires projector room"
+                placeholder="e.g. Carrying toolkit, requires projector conference room"
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 className="w-full bg-slate-950 text-xs px-3 py-2.5 rounded-xl border border-slate-700 text-white focus:outline-none focus:border-sky-500"

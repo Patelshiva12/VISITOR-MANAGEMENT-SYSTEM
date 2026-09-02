@@ -8,7 +8,8 @@ import {
   Users,
   Compass,
   FileSpreadsheet,
-  AlertTriangle
+  Sliders,
+  Home
 } from 'lucide-react';
 
 export default function Sidebar({ activePage, setActivePage }) {
@@ -21,7 +22,7 @@ export default function Sidebar({ activePage, setActivePage }) {
   const menuItems = [
     {
       id: 'guard',
-      label: 'Guard Kiosk & Terminal',
+      label: 'Guard Kiosk Terminal',
       icon: ShieldAlert,
       badge: insideCount > 0 ? insideCount + ' Inside' : null,
       badgeColor: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30',
@@ -66,16 +67,25 @@ export default function Sidebar({ activePage, setActivePage }) {
       label: 'Audit Trail & Reports',
       icon: FileSpreadsheet,
       roles: ['admin', 'guard']
+    },
+    {
+      id: 'settings',
+      label: 'Biometric Calibration',
+      icon: Sliders,
+      roles: ['admin', 'guard']
     }
   ];
 
   const filteredItems = menuItems.filter(item => item.roles.includes(currentUserRole));
 
   return (
-    <aside className="w-64 bg-slate-900/90 border-r border-slate-800 p-3 flex flex-col justify-between shrink-0 no-print">
+    <aside className="w-64 bg-slate-900/90 border-r border-slate-800 p-3.5 flex flex-col justify-between shrink-0 no-print">
       <div className="space-y-1">
-        <div className="px-3 py-2 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-          Navigation Portal
+        <div className="px-3 py-2 text-[11px] font-bold text-slate-500 uppercase tracking-wider flex justify-between items-center">
+          <span>Navigation Portal</span>
+          <button onClick={() => setActivePage('landing')} className="text-sky-400 hover:underline text-[10px]">
+            Home
+          </button>
         </div>
         {filteredItems.map(item => {
           const Icon = item.icon;
@@ -84,7 +94,7 @@ export default function Sidebar({ activePage, setActivePage }) {
             <button
               key={item.id}
               onClick={() => setActivePage(item.id)}
-              className={'w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ' + 
+              className={'w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ' + 
                 (isActive
                   ? 'bg-sky-600/20 text-sky-400 border border-sky-500/30 shadow-sm'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50')}
@@ -103,10 +113,10 @@ export default function Sidebar({ activePage, setActivePage }) {
         })}
       </div>
 
-      {/* System Status Mini Widget */}
-      <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800/80 text-xs space-y-2">
+      {/* Hardware Status Widget */}
+      <div className="p-3.5 bg-slate-950/80 rounded-2xl border border-slate-800/80 text-xs space-y-2">
         <div className="flex items-center justify-between text-slate-400 text-[11px] font-semibold">
-          <span>HARDWARE STATUS</span>
+          <span>HARDWARE ENGINE</span>
           <span className="text-emerald-400 flex items-center gap-1 font-mono">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> ONLINE
           </span>
@@ -117,12 +127,12 @@ export default function Sidebar({ activePage, setActivePage }) {
             <span className="text-slate-200 font-mono">SCRFD + ArcFace</span>
           </div>
           <div className="flex justify-between">
-            <span>Liveness Mode:</span>
-            <span className="text-sky-400 font-mono">Anti-Spoof v3</span>
+            <span>Anti-Spoofing:</span>
+            <span className="text-emerald-400 font-mono">3D Liveness</span>
           </div>
           <div className="flex justify-between">
-            <span>Gate Pass Printer:</span>
-            <span className="text-emerald-400 font-mono">Ready (Direct)</span>
+            <span>Gate Printer:</span>
+            <span className="text-sky-400 font-mono">Thermal / PVC</span>
           </div>
         </div>
       </div>

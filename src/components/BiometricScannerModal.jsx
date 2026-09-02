@@ -11,9 +11,11 @@ import {
   RefreshCw, 
   Scan, 
   X,
-  UserCheck,
   Activity,
-  Layers
+  Layers,
+  Laptop,
+  CheckSquare,
+  Sparkles
 } from 'lucide-react';
 
 export default function BiometricScannerModal({ visit, onComplete, onClose }) {
@@ -26,11 +28,11 @@ export default function BiometricScannerModal({ visit, onComplete, onClose }) {
   const [cameraError, setCameraError] = useState(null);
   const [overrideMode, setOverrideMode] = useState(false);
   const [overrideReason, setOverrideReason] = useState('');
+  const [laptopVerified, setLaptopVerified] = useState(true);
 
   const videoRef = useRef(null);
   const streamRef = useRef(null);
 
-  // Setup WebRTC camera for Facial Recognition
   useEffect(() => {
     if (selectedMode === 'FACE' && useCameraStream) {
       startCamera();
@@ -53,8 +55,8 @@ export default function BiometricScannerModal({ visit, onComplete, onClose }) {
       }
       streamRef.current = stream;
     } catch (err) {
-      console.warn('Webcam not available or permission denied, using simulated stream:', err);
-      setCameraError('Webcam unavailable. Using simulated 8MP high-def feed.');
+      console.warn('Webcam unavailable, falling back to 8MP high-def simulated frame:', err);
+      setCameraError('Webcam unavailable. Using 8MP high-def camera buffer.');
       setUseCameraStream(false);
     }
   };
@@ -66,28 +68,25 @@ export default function BiometricScannerModal({ visit, onComplete, onClose }) {
     }
   };
 
-  // Run Biometric Match Cycle
   const triggerBiometricScan = () => {
     setScanningState('scanning');
     setLivenessPassed(false);
     setConfidenceScore(0);
 
-    // Simulate SCRFD detection + Liveness + ArcFace embedding comparison
     setTimeout(() => {
       setLivenessPassed(true);
-    }, 1200);
+    }, 1100);
 
     setTimeout(() => {
-      // If visitor is blacklisted or visit rejected, simulate failed match
-      if (visit?.visitorCompany === 'Apex Logistics' || visit?.status === 'REJECTED') {
+      if (visit?.visitorCompany?.includes('Apex') || visit?.status === 'REJECTED') {
         setScanningState('failed');
         setConfidenceScore(38.2);
       } else {
-        const score = Number((96.5 + Math.random() * 3.2).toFixed(1));
+        const score = Number((97.2 + Math.random() * 2.4).toFixed(1));
         setConfidenceScore(score);
         setScanningState('matched');
       }
-    }, 2200);
+    }, 2100);
   };
 
   const isVisitApproved = visit?.status === 'APPROVED' || visit?.status === 'CHECKED_IN';
@@ -101,7 +100,7 @@ export default function BiometricScannerModal({ visit, onComplete, onClose }) {
 
   const handleManualOverride = () => {
     if (!overrideReason.trim()) {
-      alert('Please enter a mandatory guard reason for manual override.');
+      alert('Please enter a mandatory security reason for manual override.');
       return;
     }
     manualOverrideCheckIn(visit.id, overrideReason);
@@ -110,36 +109,39 @@ export default function BiometricScannerModal({ visit, onComplete, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto no-print">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-2xl w-full shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         
         {/* Top Header */}
-        <div className="px-5 py-3.5 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-white">
-            <div className="p-1.5 bg-sky-500/20 text-sky-400 rounded-lg border border-sky-500/30">
-              <Scan className="w-4 h-4" />
+        <div className="px-6 py-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+          <div className="flex items-center gap-3 text-white">
+            <div className="p-2 bg-sky-500/20 text-sky-400 rounded-xl border border-sky-500/30">
+              <Scan className="w-5 h-5" />
             </div>
             <div>
-              <span className="font-bold text-sm">Biometric Verification Terminal</span>
-              <span className="text-xs text-slate-400 block">{currentGate} | Dual Security Engine</span>
+              <span className="font-extrabold text-sm tracking-tight block">Multi-Modal Biometric Verification Terminal</span>
+              <span className="text-xs text-slate-400 font-mono flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                {currentGate} � SCRFD-ArcFace Engine
+              </span>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+            className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="p-5 space-y-4">
+        <div className="p-6 space-y-5">
           
-          {/* Biometric Mode Selector Tabs */}
-          <div className="grid grid-cols-3 gap-2 bg-slate-950 p-1 rounded-xl border border-slate-800">
+          {/* Biometric Mode Selector */}
+          <div className="grid grid-cols-3 gap-2 bg-slate-950 p-1.5 rounded-2xl border border-slate-800">
             {[
               { id: 'FACE', label: 'Facial Recognition', icon: Camera, desc: 'OpenCV + SCRFD + ArcFace' },
-              { id: 'FINGERPRINT', label: 'Fingerprint Scan', icon: Fingerprint, desc: 'Optical Sensor SDK' },
-              { id: 'IRIS', label: 'Iris Verification', icon: Eye, desc: 'Dual Iris Pattern Match' }
+              { id: 'FINGERPRINT', label: 'Fingerprint Scan', icon: Fingerprint, desc: '500 DPI Optical Sensor' },
+              { id: 'IRIS', label: 'Iris Verification', icon: Eye, desc: 'Dual 850nm NIR Scan' }
             ].map(m => {
               const Icon = m.icon;
               const isSelected = selectedMode === m.id;
@@ -150,7 +152,7 @@ export default function BiometricScannerModal({ visit, onComplete, onClose }) {
                     setSelectedMode(m.id);
                     setScanningState('idle');
                   }}
-                  className={'p-2.5 rounded-lg text-left transition-all ' + 
+                  className={'p-2.5 rounded-xl text-left transition-all ' + 
                     (isSelected 
                       ? 'bg-sky-600/20 border border-sky-500/40 text-sky-300 shadow-sm' 
                       : 'hover:bg-slate-900 text-slate-400')}
@@ -165,10 +167,10 @@ export default function BiometricScannerModal({ visit, onComplete, onClose }) {
             })}
           </div>
 
-          {/* Scanner Viewport */}
-          <div className="relative aspect-video max-h-72 w-full bg-slate-950 rounded-xl overflow-hidden border-2 border-slate-800 flex items-center justify-center">
+          {/* Biometric Capture Viewport */}
+          <div className="relative aspect-video max-h-72 w-full bg-slate-950 rounded-2xl overflow-hidden border-2 border-slate-800 flex items-center justify-center">
             
-            {/* 1. FACE MODE */}
+            {/* FACE MODE */}
             {selectedMode === 'FACE' && (
               <div className="w-full h-full relative flex items-center justify-center">
                 {useCameraStream && !cameraError ? (
@@ -186,22 +188,33 @@ export default function BiometricScannerModal({ visit, onComplete, onClose }) {
                       alt="Visitor Camera Simulator" 
                       className="w-full h-full object-cover filter brightness-90"
                     />
-                    <div className="absolute top-2 left-2 bg-slate-900/80 px-2 py-1 rounded text-[10px] text-slate-300 font-mono">
-                      Simulated 8MP Camera Feed
+                    <div className="absolute top-2 left-2 bg-slate-900/80 px-2.5 py-1 rounded-lg text-[10px] text-slate-300 font-mono">
+                      Simulated 8MP High-Definition Video Frame
                     </div>
                   </div>
                 )}
 
-                {/* Face Alignment HUD Graphic */}
+                {/* Face Alignment HUD Graphic with Landmark points */}
                 <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
-                  <div className={'w-44 h-56 rounded-[45%] border-2 border-dashed transition-all duration-300 ' + 
+                  <div className={'w-44 h-56 rounded-[45%] border-2 border-dashed transition-all duration-300 relative ' + 
                     (scanningState === 'matched' 
-                      ? 'border-emerald-400 bg-emerald-500/10 shadow-[0_0_20px_rgba(52,211,153,0.3)]' 
+                      ? 'border-emerald-400 bg-emerald-500/10 shadow-[0_0_25px_rgba(52,211,153,0.35)]' 
                       : scanningState === 'failed' 
                       ? 'border-rose-500 bg-rose-500/10' 
                       : scanningState === 'scanning'
-                      ? 'border-sky-400 shadow-[0_0_15px_rgba(56,189,248,0.3)]' 
+                      ? 'border-sky-400 shadow-[0_0_20px_rgba(56,189,248,0.35)]' 
                       : 'border-slate-500/60')}>
+                    
+                    {/* Simulated 5 Face Landmark Points */}
+                    {scanningState === 'scanning' && (
+                      <>
+                        <span className="absolute top-16 left-12 w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+                        <span className="absolute top-16 right-12 w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+                        <span className="absolute top-28 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+                        <span className="absolute bottom-14 left-14 w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+                        <span className="absolute bottom-14 right-14 w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+                      </>
+                    )}
                   </div>
 
                   {/* Laser Scan line when active */}
@@ -211,54 +224,54 @@ export default function BiometricScannerModal({ visit, onComplete, onClose }) {
                 </div>
 
                 {/* Real-time Telemetry Overlay */}
-                <div className="absolute bottom-2 inset-x-2 flex justify-between items-center text-[10px] bg-slate-900/80 backdrop-blur-sm p-2 rounded-lg border border-slate-800 font-mono text-slate-300">
-                  <div className="flex items-center gap-2">
+                <div className="absolute bottom-2 inset-x-2 flex justify-between items-center text-[10px] bg-slate-900/85 backdrop-blur-md p-2.5 rounded-xl border border-slate-800 font-mono text-slate-300">
+                  <div className="flex items-center gap-3">
                     <span className="flex items-center gap-1">
-                      <Activity className="w-3 h-3 text-emerald-400" />
-                      Liveness: {livenessPassed ? <span className="text-emerald-400 font-bold">LIVE (99.2%)</span> : <span className="text-slate-400">Detecting...</span>}
+                      <Activity className="w-3.5 h-3.5 text-emerald-400" />
+                      Liveness: {livenessPassed ? <span className="text-emerald-400 font-bold">3D LIVE (99.4%)</span> : <span className="text-slate-400">Detecting...</span>}
                     </span>
                     <span className="text-slate-600">|</span>
-                    <span>Anti-Spoof: <span className="text-sky-400">Active</span></span>
+                    <span>SCRFD: <span className="text-sky-400 font-bold">12ms</span></span>
                   </div>
                   <div>
-                    ArcFace: {confidenceScore > 0 ? <span className="text-emerald-400 font-bold">{confidenceScore}% Match</span> : '--'}
+                    ArcFace Embedding: {confidenceScore > 0 ? <span className="text-emerald-400 font-bold">{confidenceScore}% MATCH</span> : '--'}
                   </div>
                 </div>
               </div>
             )}
 
-            {/* 2. FINGERPRINT MODE */}
+            {/* FINGERPRINT MODE */}
             {selectedMode === 'FINGERPRINT' && (
               <div className="flex flex-col items-center justify-center p-6 text-center space-y-3">
                 <div className={'w-28 h-28 rounded-2xl flex items-center justify-center border-2 transition-all ' + 
                   (scanningState === 'matched' 
-                    ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400' 
+                    ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.3)]' 
                     : scanningState === 'scanning' 
                     ? 'border-sky-500 bg-sky-500/10 text-sky-400 animate-pulse' 
                     : 'border-slate-700 bg-slate-900 text-slate-400')}>
                   <Fingerprint className="w-16 h-16" />
                 </div>
                 <div className="text-xs">
-                  <span className="font-bold text-white block">Optical Fingerprint Sensor Ready</span>
-                  <span className="text-slate-400 text-[11px]">Place registered index finger firmly on glass prism</span>
+                  <span className="font-bold text-white block">500 DPI Optical Sensor Ready</span>
+                  <span className="text-slate-400 text-[11px]">Place registered index finger on glass prism</span>
                 </div>
               </div>
             )}
 
-            {/* 3. IRIS MODE */}
+            {/* IRIS MODE */}
             {selectedMode === 'IRIS' && (
               <div className="flex flex-col items-center justify-center p-6 text-center space-y-3">
                 <div className={'w-28 h-28 rounded-full flex items-center justify-center border-2 transition-all ' + 
                   (scanningState === 'matched' 
-                    ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400' 
+                    ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.3)]' 
                     : scanningState === 'scanning' 
                     ? 'border-sky-500 bg-sky-500/10 text-sky-400 animate-spin' 
                     : 'border-slate-700 bg-slate-900 text-slate-400')}>
                   <Eye className="w-16 h-16" />
                 </div>
                 <div className="text-xs">
-                  <span className="font-bold text-white block">Dual Near-IR Iris Scanner</span>
-                  <span className="text-slate-400 text-[11px]">Align eyes with the optical guide target</span>
+                  <span className="font-bold text-white block">Dual 850nm Near-IR Iris Scanner</span>
+                  <span className="text-slate-400 text-[11px]">Align eye with optical circular reticle (35-45cm)</span>
                 </div>
               </div>
             )}
@@ -270,23 +283,47 @@ export default function BiometricScannerModal({ visit, onComplete, onClose }) {
             <button
               onClick={triggerBiometricScan}
               disabled={scanningState === 'scanning'}
-              className="px-6 py-2.5 bg-gradient-to-r from-sky-600 to-cyan-500 hover:from-sky-500 hover:to-cyan-400 text-white text-xs font-bold rounded-xl shadow-lg shadow-sky-500/25 flex items-center gap-2 transition-all disabled:opacity-50"
+              className="px-6 py-3 bg-gradient-to-r from-sky-600 to-cyan-500 hover:from-sky-500 hover:to-cyan-400 text-white text-xs font-bold rounded-xl shadow-lg shadow-sky-500/25 flex items-center gap-2 transition-all disabled:opacity-50"
             >
               <RefreshCw className={'w-4 h-4 ' + (scanningState === 'scanning' ? 'animate-spin' : '')} />
-              {scanningState === 'scanning' ? 'Processing Biometric Match...' : 'Capture & Verify Biometrics'}
+              {scanningState === 'scanning' ? 'Matching Biometrics & Anti-Spoofing...' : 'Capture & Verify Biometrics'}
             </button>
           </div>
 
-          {/* Dual Security Verification Result Matrix (Proposal Page 5) */}
-          <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
-            <div className="text-[11px] font-bold uppercase text-slate-400 tracking-wider flex items-center gap-1.5">
-              <Layers className="w-3.5 h-3.5 text-sky-400" />
-              Dual-Layer Security Controls
+          {/* Equipment / Laptop Tagging Check */}
+          {visit?.laptopSerial && visit.laptopSerial !== 'NONE' && (
+            <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2.5">
+                <Laptop className="w-4 h-4 text-sky-400" />
+                <div>
+                  <span className="text-slate-300 font-semibold block">Declared Equipment: {visit.laptopSerial}</span>
+                  <span className="text-[10px] text-slate-500">Verify physical asset tag before turnstile gate open</span>
+                </div>
+              </div>
+              <label className="flex items-center gap-1.5 text-xs text-slate-300 font-medium cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={laptopVerified}
+                  onChange={(e) => setLaptopVerified(e.target.checked)}
+                  className="rounded border-slate-700 text-sky-600 focus:ring-sky-500 h-4 w-4"
+                />
+                <span>Tag Verified</span>
+              </label>
+            </div>
+          )}
+
+          {/* Dual Security Verification Result Matrix (Proposal Page 5, Section 6) */}
+          <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
+            <div className="text-[11px] font-bold uppercase text-slate-400 tracking-wider flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5 text-sky-400" /> Dual Security Controls Matrix
+              </span>
+              <span className="text-[10px] text-slate-500 font-mono">Proposal Page 5</span>
             </div>
 
             <div className="grid grid-cols-2 gap-3 text-xs">
-              {/* Check 1: Identity Biometric Match */}
-              <div className={'p-3 rounded-lg border flex items-start gap-2.5 ' + 
+              {/* Check 1: Identity Match */}
+              <div className={'p-3 rounded-xl border flex items-start gap-2.5 ' + 
                 (scanningState === 'matched' 
                   ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' 
                   : scanningState === 'failed' 
@@ -300,15 +337,19 @@ export default function BiometricScannerModal({ visit, onComplete, onClose }) {
                   <Activity className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
                 )}
                 <div>
-                  <span className="font-bold text-white block">1. Biometric Match</span>
+                  <span className="font-bold text-white block">1. Identity Verification</span>
                   <span className="text-[11px]">
-                    {scanningState === 'matched' ? 'Enrolled identity matched (' + confidenceScore + '%)' : scanningState === 'failed' ? 'Biometric Mismatch / Spoof Detected' : 'Pending biometric scan'}
+                    {scanningState === 'matched' 
+                      ? 'Confirmed: ' + (visit?.visitorName || 'Visitor') + ' (' + confidenceScore + '%)'
+                      : scanningState === 'failed' 
+                      ? 'Biometric Mismatch / Spoof Detected' 
+                      : 'Pending biometric scan'}
                   </span>
                 </div>
               </div>
 
               {/* Check 2: Visit Authorization */}
-              <div className={'p-3 rounded-lg border flex items-start gap-2.5 ' + 
+              <div className={'p-3 rounded-xl border flex items-start gap-2.5 ' + 
                 (isVisitApproved 
                   ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' 
                   : 'bg-amber-500/10 border-amber-500/30 text-amber-300')}>
@@ -327,31 +368,31 @@ export default function BiometricScannerModal({ visit, onComplete, onClose }) {
             </div>
           </div>
 
-          {/* Manual Security Override Option (For Guard) */}
+          {/* Manual Security Override Option */}
           {overrideMode ? (
-            <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-2">
+            <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl space-y-2.5">
               <span className="text-xs font-bold text-amber-400 block flex items-center gap-1.5">
-                <AlertTriangle className="w-4 h-4" /> Guard Manual Security Override
+                <AlertTriangle className="w-4 h-4" /> Security Guard Manual Override Mode
               </span>
               <input 
                 type="text" 
-                placeholder="Enter mandatory reason (e.g. VIP visitor, scanner glitch, verbal host clearance)"
+                placeholder="Enter mandatory reason (e.g. VIP escort, hardware glitch, verbal clearance by CSO)"
                 value={overrideReason}
                 onChange={(e) => setOverrideReason(e.target.value)}
-                className="w-full bg-slate-900 text-xs px-3 py-2 rounded-lg border border-slate-700 text-white focus:outline-none focus:border-amber-400"
+                className="w-full bg-slate-900 text-xs px-3 py-2.5 rounded-xl border border-slate-700 text-white focus:outline-none focus:border-amber-400"
               />
               <div className="flex justify-end gap-2 pt-1">
                 <button
                   onClick={() => setOverrideMode(false)}
-                  className="px-3 py-1 text-xs text-slate-400 hover:text-white"
+                  className="px-3 py-1.5 text-xs text-slate-400 hover:text-white"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleManualOverride}
-                  className="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-lg transition-colors"
+                  className="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl transition-colors"
                 >
-                  Confirm Override Check-In
+                  Confirm Manual Check-In
                 </button>
               </div>
             </div>
@@ -361,7 +402,7 @@ export default function BiometricScannerModal({ visit, onComplete, onClose }) {
                 onClick={() => setOverrideMode(true)}
                 className="text-amber-400 hover:underline flex items-center gap-1 text-[11px]"
               >
-                Need manual guard override?
+                Need guard manual security override?
               </button>
             </div>
           )}
@@ -369,7 +410,7 @@ export default function BiometricScannerModal({ visit, onComplete, onClose }) {
         </div>
 
         {/* Modal Actions */}
-        <div className="px-5 py-3.5 bg-slate-950 border-t border-slate-800 flex justify-between items-center">
+        <div className="px-6 py-4 bg-slate-950 border-t border-slate-800 flex justify-between items-center">
           <button
             onClick={onClose}
             className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs rounded-xl transition-colors"
@@ -380,12 +421,12 @@ export default function BiometricScannerModal({ visit, onComplete, onClose }) {
           <button
             onClick={handleGrantAccess}
             disabled={!canGrantAccess}
-            className={'px-5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ' + 
+            className={'px-6 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ' + 
               (canGrantAccess
                 ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30'
                 : 'bg-slate-800 text-slate-500 cursor-not-allowed')}
           >
-            <ShieldCheck className="w-4 h-4" /> Grant Entry & Issue Pass
+            <ShieldCheck className="w-4 h-4" /> Grant Gate Entry & Issue Pass
           </button>
         </div>
 

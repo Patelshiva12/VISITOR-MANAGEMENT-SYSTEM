@@ -14,7 +14,10 @@ import {
   XCircle,
   Eye,
   Camera,
-  Fingerprint
+  Fingerprint,
+  TrendingUp,
+  BarChart3,
+  Server
 } from 'lucide-react';
 import { formatTimeOnly, formatDuration, getElapsedMinutes } from '../utils/formatters';
 import GatePassModal from '../components/GatePassModal';
@@ -24,9 +27,9 @@ export default function Dashboard({ setActivePage }) {
   const [selectedPassVisit, setSelectedPassVisit] = useState(null);
   const [, setTicker] = useState(0);
 
-  // Live timer tick every 10 seconds for real-time elapsed duration
+  // Real-time ticking for live elapsed timers
   useEffect(() => {
-    const timer = setInterval(() => setTicker(t => t + 1), 10000);
+    const timer = setInterval(() => setTicker(t => t + 1), 5000);
     return () => clearInterval(timer);
   }, []);
 
@@ -45,8 +48,9 @@ export default function Dashboard({ setActivePage }) {
 
   return (
     <div className="space-y-6 pb-12">
+      
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900/60 p-5 rounded-2xl border border-slate-800 backdrop-blur-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900/60 p-5 rounded-3xl border border-slate-800 backdrop-blur-sm">
         <div>
           <h1 className="text-xl font-black text-white tracking-tight flex items-center gap-2.5">
             <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -131,7 +135,7 @@ export default function Dashboard({ setActivePage }) {
           <div className="text-[11px] text-slate-500 mt-1">Action required by security</div>
         </div>
 
-        {/* Card 5: Biometric Watch / Blacklist */}
+        {/* Card 5: Security Watch / Flagged */}
         <div className="bg-slate-900/90 p-4 rounded-2xl border border-slate-800 shadow-sm relative overflow-hidden group hover:border-purple-500/50 transition-all">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Security Watch</span>
@@ -148,11 +152,11 @@ export default function Dashboard({ setActivePage }) {
 
       </div>
 
-      {/* Main Grid: Active Visitors Inside & Biometric Telemetry */}
+      {/* Hourly Flow Chart & Overstay Monitor */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Left 2 Cols: Live Currently Inside Monitor */}
-        <div className="lg:col-span-2 bg-slate-900/90 rounded-2xl border border-slate-800 p-5 space-y-4">
+        <div className="lg:col-span-2 bg-slate-900/90 rounded-3xl border border-slate-800 p-6 space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-bold text-white text-sm flex items-center gap-2">
@@ -165,12 +169,12 @@ export default function Dashboard({ setActivePage }) {
               onClick={() => setActivePage('guard')}
               className="text-xs text-sky-400 hover:underline font-semibold"
             >
-              Guard View &rarr;
+              Open Guard Kiosk &rarr;
             </button>
           </div>
 
           {insideVisits.length === 0 ? (
-            <div className="p-8 text-center bg-slate-950/60 rounded-xl border border-slate-800 text-slate-500 text-xs">
+            <div className="p-8 text-center bg-slate-950/60 rounded-2xl border border-slate-800 text-slate-500 text-xs">
               No visitors currently inside premises.
             </div>
           ) : (
@@ -178,8 +182,8 @@ export default function Dashboard({ setActivePage }) {
               <table className="w-full text-left text-xs">
                 <thead>
                   <tr className="border-b border-slate-800 text-slate-400 font-bold uppercase text-[10px]">
-                    <th className="pb-3">Visitor</th>
-                    <th className="pb-3">Host & Dept</th>
+                    <th className="pb-3">Visitor Profile</th>
+                    <th className="pb-3">Host & Department</th>
                     <th className="pb-3">Entry Time</th>
                     <th className="pb-3">Elapsed / Allowed</th>
                     <th className="pb-3 text-right">Pass Badge</th>
@@ -196,7 +200,7 @@ export default function Dashboard({ setActivePage }) {
                             <img 
                               src={visit.visitorPhoto} 
                               alt={visit.visitorName} 
-                              className="w-9 h-9 rounded-lg object-cover border border-slate-700 shrink-0"
+                              className="w-10 h-10 rounded-xl object-cover border border-slate-700 shrink-0"
                             />
                             <div>
                               <span className="font-bold text-white block">{visit.visitorName}</span>
@@ -213,7 +217,7 @@ export default function Dashboard({ setActivePage }) {
                         </td>
                         <td className="py-3">
                           <div className="flex items-center gap-2">
-                            <span className={'font-mono font-bold px-2 py-0.5 rounded ' + 
+                            <span className={'font-mono font-bold px-2 py-0.5 rounded-lg ' + 
                               (isOverstay ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30 animate-pulse' : 'bg-slate-800 text-slate-300')}>
                               {formatDuration(elapsed)} / {visit.expectedDurationMins}m
                             </span>
@@ -227,9 +231,9 @@ export default function Dashboard({ setActivePage }) {
                         <td className="py-3 text-right">
                           <button
                             onClick={() => setSelectedPassVisit(visit)}
-                            className="px-2.5 py-1 bg-slate-800 hover:bg-sky-600 hover:text-white text-slate-300 rounded-lg text-[11px] font-bold transition-all border border-slate-700"
+                            className="px-3 py-1.5 bg-slate-800 hover:bg-sky-600 hover:text-white text-slate-300 rounded-xl text-[11px] font-bold transition-all border border-slate-700"
                           >
-                            View Pass
+                            View Badge
                           </button>
                         </td>
                       </tr>
@@ -242,7 +246,7 @@ export default function Dashboard({ setActivePage }) {
         </div>
 
         {/* Right 1 Col: Biometric Pipeline Telemetry Widget */}
-        <div className="bg-slate-900/90 rounded-2xl border border-slate-800 p-5 space-y-4">
+        <div className="bg-slate-900/90 rounded-3xl border border-slate-800 p-6 space-y-4">
           <div>
             <h3 className="font-bold text-white text-sm flex items-center gap-2">
               <Activity className="w-4 h-4 text-emerald-400" />
@@ -254,19 +258,19 @@ export default function Dashboard({ setActivePage }) {
           <div className="space-y-3 text-xs">
             
             {/* Facial Recognition Node */}
-            <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
+            <div className="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="font-bold text-white flex items-center gap-1.5">
                   <Camera className="w-4 h-4 text-sky-400" /> Facial Pipeline
                 </span>
-                <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-[10px] font-mono font-bold rounded">
-                  ONLINE (14ms)
+                <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-[10px] font-mono font-bold rounded-full">
+                  ONLINE (12ms)
                 </span>
               </div>
               <div className="text-[11px] text-slate-400 space-y-1">
                 <div className="flex justify-between">
                   <span>Detection Model:</span>
-                  <span className="text-slate-200 font-mono">SCRFD-10G</span>
+                  <span className="text-slate-200 font-mono">SCRFD-10G (5-Point)</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Recognition Model:</span>
@@ -280,34 +284,34 @@ export default function Dashboard({ setActivePage }) {
             </div>
 
             {/* Fingerprint Node */}
-            <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
+            <div className="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="font-bold text-white flex items-center gap-1.5">
                   <Fingerprint className="w-4 h-4 text-sky-400" /> Fingerprint Scanner
                 </span>
-                <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-[10px] font-mono font-bold rounded">
+                <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-[10px] font-mono font-bold rounded-full">
                   READY
                 </span>
               </div>
               <div className="text-[11px] text-slate-400 space-y-1">
                 <div className="flex justify-between">
                   <span>Sensor Type:</span>
-                  <span className="text-slate-200 font-mono">500 DPI Optical</span>
+                  <span className="text-slate-200 font-mono">500 DPI Optical Prism</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Template Algorithm:</span>
+                  <span>Template Standard:</span>
                   <span className="text-slate-200 font-mono">ANSI/INCITS 378</span>
                 </div>
               </div>
             </div>
 
             {/* Iris Node */}
-            <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
+            <div className="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="font-bold text-white flex items-center gap-1.5">
                   <Eye className="w-4 h-4 text-sky-400" /> Iris Recognition
                 </span>
-                <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-[10px] font-mono font-bold rounded">
+                <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-[10px] font-mono font-bold rounded-full">
                   STANDBY
                 </span>
               </div>
@@ -317,7 +321,7 @@ export default function Dashboard({ setActivePage }) {
                   <span className="text-slate-200 font-mono">Near-Infrared (NIR 850nm)</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Capture Distance:</span>
+                  <span>Capture Range:</span>
                   <span className="text-slate-200 font-mono">35 - 45 cm Auto-Focus</span>
                 </div>
               </div>

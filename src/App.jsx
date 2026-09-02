@@ -12,12 +12,12 @@ import HostApprovals from './pages/HostApprovals';
 import VisitorList from './pages/VisitorList';
 import ZoneAccess from './pages/ZoneAccess';
 import AuditLogs from './pages/AuditLogs';
+import Settings from './pages/Settings';
 
 function MainApp() {
-  const [activePage, setActivePage] = useState('landing'); // Default landing page for comprehensive presentation
+  const [activePage, setActivePage] = useState('landing');
   const { isAuthenticated } = useVms();
 
-  // Full Screen Standalone Views (Landing & Login)
   if (activePage === 'landing') {
     return <LandingPage setActivePage={setActivePage} />;
   }
@@ -26,7 +26,6 @@ function MainApp() {
     return <LoginPage setActivePage={setActivePage} />;
   }
 
-  // Application Portal Views
   const renderActivePage = () => {
     switch (activePage) {
       case 'dashboard':
@@ -43,6 +42,8 @@ function MainApp() {
         return <ZoneAccess setActivePage={setActivePage} />;
       case 'audit-logs':
         return <AuditLogs setActivePage={setActivePage} />;
+      case 'settings':
+        return <Settings setActivePage={setActivePage} />;
       default:
         return <Dashboard setActivePage={setActivePage} />;
     }
@@ -62,7 +63,6 @@ function MainApp() {
         </main>
       </div>
 
-      {/* Real-time Global Security Alerts */}
       <ZoneAlertModal />
     </div>
   );
