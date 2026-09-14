@@ -1,62 +1,89 @@
-# Multi-Modal Biometric Visitor Management System (VMS)
+# ILIZIEN VMS - Multi-Modal Biometric Visitor Management System (2.0)
 
-An enterprise-grade React web application for the **Visitor Management System with Multi-Modal Biometrics (Face, Fingerprint, Iris, Anti-Spoofing Liveness Detection) & Digital Gate Pass Management**, designed strictly in accordance with the Ilizien Private Limited proposal specification.
-
----
-
-## ?? Key Features
-
-1. **Role-Based Workflows & Portals:**
-   - **Security Guard Kiosk:** Fast check-in/check-out, live camera biometric station, QR code scanner, thermal gate pass printing, manual security override.
-   - **Host & Department Portal:** Expected visitor calendar, pending request queue, 1-click approvals with custom zone permissions, rejection with remarks.
-   - **Visitor Pre-Registration:** Self-service multi-step onboarding wizard with webcam selfie capture and repeat-visitor phone lookup.
-   - **Admin Command Center:** Live real-time active visitor tracking with elapsed time counters, overstay alerts, biometric hardware telemetry, and visitor trends.
-
-2. **Multi-Modal Biometric Verification Suite:**
-   - **Facial Recognition Station:** Live WebRTC camera capture, SCRFD alignment overlay, ArcFace embedding comparison, and silent 3D liveness anti-spoofing detection.
-   - **Fingerprint Verification:** Simulated 500 DPI optical sensor with minutiae extraction and template matching.
-   - **Iris Recognition:** Dual Near-IR retinal HUD with pupil targeting.
-
-3. **Dual Security Policy Enforcement (Proposal Page 5):**
-   - Combines **Identity Match** ("This is the enrolled person") with **Visit Authorization** ("This person has a valid approval for this date, time, and host").
-
-4. **Digital Gate Pass Management & Printing:**
-   - Printable pass with dynamic vector QR code, verified biometric seal, barcode, allowed zones, and custom printable styles for thermal and standard badge printers.
-
-5. **Zone-Based Access Control Matrix (Proposal Section 14):**
-   - Multi-zone turnstile scanner simulation (Reception, Office Wing, R&D Lab, Server Vault) with instant real-time security breach alarm feeds.
-
-6. **Defensible Audit Trail:**
-   - Immutable log of all events with full-text search, severity filtering, and 1-click **CSV & JSON data export**.
+Enterprise Multi-Modal Biometric Identity & Digital Gate Pass System powered by **Django 5.2 + Django REST Framework (DRF)**.
 
 ---
 
-## ?? How to Run Locally
+## 📂 Project Architecture
 
-### Prerequisites
-- Node.js (v18 or higher)
-- npm or yarn
+`
+D:\vms-biometric-system\
+├── frontend/                     # React 18 SPA (Vite + Tailwind CSS + Lucide Icons)
+│   ├── src/
+│   │   ├── components/           # Biometric Modal, QR Scanner, Gate Pass, Navbar, Sidebar
+│   │   ├── context/              # VmsContext (RBAC, active state, live backend sync)
+│   │   ├── pages/                # LandingPage, PreRegistration, GuardKiosk, HostApprovals, Dashboard
+│   │   └── services/api.js       # Centralized REST API client (Fetch + JWT Auth)
+│   ├── package.json
+│   ├── tailwind.config.js
+│   └── vite.config.js
+│
+├── backend/                      # Django 5.2 + Django REST Framework (DRF)
+│   ├── manage.py
+│   ├── run.py                    # 1-Click Server Runner (Auto-migrate + Auto-seed + Runserver)
+│   ├── requirements.txt
+│   ├── vms_project/              # Django Project Root (settings, urls, wsgi, asgi)
+│   │   ├── settings.py           # DB config, CORS, DRF, JWT, Biometric keys
+│   │   └── urls.py               # Root URL router (/api/v1/ and /admin/)
+│   └── vms_api/                  # Core Django VMS App
+│       ├── models.py             # Person, BiometricTemplate, Visit, AuditLog, Zone
+│       ├── serializers.py        # DRF Model & Response Serializers
+│       ├── urls.py               # /api/v1/ endpoints
+│       ├── views/                # auth_views, visit_views, person_views, biometric_views, zone_views, audit_views
+│       ├── services/             # OpenCV, SCRFD, ArcFace (Zero dlib), AES-256 template protection
+│       └── management/commands/  # seed_db command
+│
+└── README.md
+`
 
-### Installation
-```bash
-# 1. Install dependencies
+---
+
+## 🚀 How to Run the System
+
+### 1. Start Django Backend (Port 8080 / Custom Port)
+Open a terminal in `D:\vms-biometric-system\backend`:
+```powershell
+cd D:\vms-biometric-system\backend
+pip install -r requirements.txt
+
+# Run on default Port 8080:
+python run.py
+
+# Or run on any custom port (e.g. 8005):
+python run.py 8005
+```
+*(Or manually: `python manage.py migrate` -> `python manage.py seed_db` -> `python manage.py runserver 127.0.0.1:8080`)*
+
+* **API Base URL:** `http://localhost:8080/api/v1/`
+* **Django Admin Panel:** `http://localhost:8080/admin/`
+
+
+
+---
+
+### 2. Start React Frontend (Port 5173)
+Open another terminal in D:\vms-biometric-system\frontend:
+`powershell
+cd D:\vms-biometric-system\frontend
 npm install
-
-# 2. Start development server
 npm run dev
-```
-
-Open your browser at `http://localhost:5173` (or port indicated in terminal).
-
-### Building for Production
-```bash
-npm run build
-npm run preview
-```
+`
+* **Web UI:** http://localhost:5173
 
 ---
 
-## ??? Tech Stack
-- **Frontend:** React 18, Vite 6
-- **Styling:** Tailwind CSS, Lucide React Icons
-- **State & Data:** React Context API + LocalStorage persistence + Seed baseline reset
+## 👥 Role-Based Portals
+
+| Role | Landing Route | Access Scope |
+| :--- | :--- | :--- |
+| 🌐 **Public Visitor** | / (Landing) & /pre-register | Self-Service Pre-registration & Pass Tracking (Zero staff access) |
+| 🛡️ **Security Guard** | /guard (Guard Kiosk) | Live Face AI Verification, Gate Check-In/Out, Thermal Pass Print |
+| 👤 **Host (Employee)**| /host-approvals | Review Visitor Requests, Approve/Reject, Assign Zone Clearance |
+| 👑 **Admin (CSO)**     | /dashboard (Command Center) | Master Analytics, Turnstiles, Biometric Calibration, Audit CSV |
+
+---
+
+## 🔒 Biometric Security Standards
+* **Face AI Engine:** OpenCV + SCRFD (5-Point Landmarks) + ArcFace InsightFace R100 (512-dim embedding) - **Strictly Zero dlib**.
+* **Template Protection:** AES-256-GCM encrypted feature vectors (Raw images deleted immediately after vector extraction).
+* **Anti-Spoofing:** 3D Liveness Detection (Photo / Screen / Replay attack mitigation).

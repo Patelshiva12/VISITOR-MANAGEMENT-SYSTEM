@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Central Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: vms_postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword99
+      POSTGRES_DB: ilizien_vms
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  # FastAPI Python Backend
+  backend:
+    build: .
+    container_name: vms_fastapi_backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgrespassword99@postgres:5432/ilizien_vms
+      - BIOMETRIC_VAULT_KEY=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    depends_on:
+      - postgres
+
+volumes:
+  pgdata:
