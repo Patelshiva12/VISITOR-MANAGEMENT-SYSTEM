@@ -26,6 +26,7 @@ import BiometricScannerModal from '../components/BiometricScannerModal';
 import QRScannerModal from '../components/QRScannerModal';
 import GatePassModal from '../components/GatePassModal';
 import WalkInRegistrationModal from '../components/WalkInRegistrationModal';
+import Pagination from '../components/Pagination';
 
 export default function GuardKiosk() {
   const { 
@@ -41,6 +42,15 @@ export default function GuardKiosk() {
   const [activeTab, setActiveTab] = useState('ALL'); // 'ALL' | 'INSIDE' | 'APPROVED' | 'PENDING'
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   
+  // 10 Items Per Page Pagination State
+  const ITEMS_PER_PAGE = 10;
+  const [currentPage, setCurrentPage] = useState(1);
+  
+  // Reset pagination to page 1 whenever filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, activeTab, selectedCategory]);
+
   // Modals
   const [verifyingVisit, setVerifyingVisit] = useState(null);
   const [walkInModalOpen, setWalkInModalOpen] = useState(false);
@@ -48,13 +58,20 @@ export default function GuardKiosk() {
   const [activePassVisit, setActivePassVisit] = useState(null);
   const [exitVerifyVisit, setExitVerifyVisit] = useState(null);
 
-  // Filter visits
+  // Filter visits (Null-Safe)
   const filteredVisits = visits.filter(v => {
+    if (!v) return false;
+    const q = (searchQuery || '').toLowerCase().trim();
+    const vName = (v.visitorName || v.visitor_name || '').toLowerCase();
+    const vComp = (v.visitorCompany || v.visitor_company || '').toLowerCase();
+    const pNo = (v.passNumber || v.pass_number || '').toLowerCase();
+    const vPhone = String(v.visitorPhone || v.visitor_phone || '');
+
     const matchesSearch = 
-      v.visitorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      v.visitorCompany.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      v.passNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      v.visitorPhone.includes(searchQuery);
+      vName.includes(q) ||
+      vComp.includes(q) ||
+      pNo.includes(q) ||
+      vPhone.includes(q);
 
     if (!matchesSearch) return false;
 
@@ -84,7 +101,7 @@ export default function GuardKiosk() {
     <div className="space-y-5 pb-12">
       
       {/* Top Banner / Quick Action Bar */}
-      <div className="bg-slate-900 border border-slate-800 p-5 sm:p-6 rounded-3xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-slate-900 border border-slate-800 p-5 sm:p-6 rounded-3xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors duration-150">
         <div>
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -108,7 +125,7 @@ export default function GuardKiosk() {
 
           <button
             onClick={() => setQrModalOpen(true)}
-            className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-sky-400 border border-slate-700 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all"
+            className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-sky-400 border border-slate-700 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all cursor-pointer"
           >
             <QrCode className="w-4 h-4" /> Scan Visitor QR
           </button>
@@ -145,7 +162,7 @@ export default function GuardKiosk() {
               onClick={() => setActiveTab(tab.id)}
               className={'px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shrink-0 ' + 
                 (activeTab === tab.id 
-                  ? 'bg-slate-800 text-white shadow-sm' 
+                  ? 'bg-slate-900  text-white shadow-sm font-bold' 
                   : 'text-slate-400 hover:text-slate-200')}
             >
               <span>{tab.label}</span>
@@ -180,7 +197,7 @@ export default function GuardKiosk() {
               placeholder="Search visitor, phone, pass #..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-900 text-xs pl-9 pr-3 py-2 rounded-xl border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
+              className="w-full bg-slate-900 text-xs pl-9 pr-3 py-2 rounded-xl border border-slate-800 text-white placeholder-slate-400 focus:outline-none focus:border-sky-500"
             />
           </div>
         </div>
@@ -188,7 +205,7 @@ export default function GuardKiosk() {
       </div>
 
       {/* Main Table View */}
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-sm">
+      <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-sm transition-colors duration-150">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-950/80 text-slate-400 font-bold uppercase text-[10px] border-b border-slate-800">
@@ -200,15 +217,15 @@ export default function GuardKiosk() {
                 <th className="p-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-slate-200">
               {filteredVisits.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="p-8 text-center text-slate-500">
+                  <td colSpan={5} className="p-8 text-center text-slate-400">
                     No visitor records found matching your filters.
                   </td>
                 </tr>
               ) : (
-                filteredVisits.map(visit => {
+                filteredVisits.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map(visit => {
                   const elapsed = getElapsedMinutes(visit.checkInTime);
                   const isOverstay = visit.status === 'CHECKED_IN' && elapsed > visit.expectedDurationMins;
 
@@ -218,11 +235,17 @@ export default function GuardKiosk() {
                       {/* Visitor Details */}
                       <td className="p-4">
                         <div className="flex items-center gap-3">
-                          <img 
-                            src={visit.visitorPhoto} 
-                            alt={visit.visitorName} 
-                            className="w-11 h-11 rounded-2xl object-cover border border-slate-700 shrink-0"
-                          />
+                          {visit.visitorPhoto ? (
+                            <img 
+                              src={visit.visitorPhoto} 
+                              alt={visit.visitorName} 
+                              className="w-11 h-11 rounded-2xl object-cover border border-slate-700 shrink-0"
+                            />
+                          ) : (
+                            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-sky-700 to-indigo-600 flex items-center justify-center text-white text-xs font-black border border-slate-700 shrink-0">
+                              {(visit.visitorName || 'V').split(' ').map(n => n[0]).filter(Boolean).slice(0, 2).join('').toUpperCase()}
+                            </div>
+                          )}
                           <div>
                             <div className="flex items-center gap-1.5">
                               <span className="font-bold text-white text-sm block">{visit.visitorName}</span>
@@ -233,7 +256,7 @@ export default function GuardKiosk() {
                               )}
                             </div>
                             <span className="text-[11px] text-slate-400 block">{visit.visitorCompany}</span>
-                            <span className="text-[10px] text-slate-500 font-mono">{visit.visitorPhone}</span>
+                            <span className="text-[10px] text-slate-400 font-mono">{visit.visitorPhone}</span>
                           </div>
                         </div>
                       </td>
@@ -273,7 +296,7 @@ export default function GuardKiosk() {
                             <div className="text-[10px] font-mono text-slate-400 block">
                               In: {formatTimeOnly(visit.checkInTime)} ({formatDuration(elapsed)})
                               {isOverstay && (
-                                <span className="text-rose-400 font-bold ml-1 block">?? OVERSTAY</span>
+                                <span className="text-rose-400 font-bold ml-1 block">⚠️ OVERSTAY</span>
                               )}
                             </div>
                           )}
@@ -288,7 +311,7 @@ export default function GuardKiosk() {
                           {visit.status === 'APPROVED' && (
                             <button
                               onClick={() => setVerifyingVisit(visit)}
-                              className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all"
+                              className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
                             >
                               <Scan className="w-3.5 h-3.5" /> Biometric Check-In
                             </button>
@@ -298,7 +321,7 @@ export default function GuardKiosk() {
                           {visit.status === 'CHECKED_IN' && (
                             <button
                               onClick={() => setExitVerifyVisit(visit)}
-                              className="px-3.5 py-1.5 bg-slate-800 hover:bg-rose-600 hover:text-white text-slate-300 rounded-xl text-xs font-bold flex items-center gap-1.5 border border-slate-700 transition-all"
+                              className="px-3.5 py-1.5 bg-slate-800 hover:bg-rose-600 hover:text-white text-slate-300 rounded-xl text-xs font-bold flex items-center gap-1.5 border border-slate-700 transition-all cursor-pointer"
                             >
                               <LogOut className="w-3.5 h-3.5" /> Check-Out
                             </button>
@@ -308,7 +331,7 @@ export default function GuardKiosk() {
                           {visit.status === 'PENDING' && (
                             <button
                               onClick={() => setVerifyingVisit(visit)}
-                              className="px-3.5 py-1.5 bg-amber-600/30 hover:bg-amber-600 text-amber-300 hover:text-white rounded-xl text-xs font-bold border border-amber-500/40 transition-all"
+                              className="px-3.5 py-1.5 bg-amber-600/30 hover:bg-amber-600 text-amber-300 hover:text-white rounded-xl text-xs font-bold border border-amber-500/40 transition-all cursor-pointer"
                             >
                               Check Status
                             </button>
@@ -318,7 +341,7 @@ export default function GuardKiosk() {
                           <button
                             onClick={() => handlePrintPass(visit)}
                             title="Print / View Gate Pass"
-                            className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl border border-slate-700 transition-colors"
+                            className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl border border-slate-700 transition-colors cursor-pointer"
                           >
                             <Printer className="w-4 h-4" />
                           </button>
@@ -333,6 +356,15 @@ export default function GuardKiosk() {
             </tbody>
           </table>
         </div>
+
+        {/* 10-Item Responsive Pagination Footer */}
+        <Pagination
+          currentPage={currentPage}
+          totalItems={filteredVisits.length}
+          pageSize={ITEMS_PER_PAGE}
+          onPageChange={setCurrentPage}
+          itemLabel="visitors"
+        />
       </div>
 
       {/* Flow 2: Spot Walk-In Registration Modal */}

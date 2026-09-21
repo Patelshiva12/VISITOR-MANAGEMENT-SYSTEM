@@ -111,7 +111,7 @@ export default function AuditLogs() {
             <tbody className="divide-y divide-slate-800/60 font-mono">
               {filteredLogs.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="p-8 text-center text-slate-500 font-sans">
+                  <td colSpan={6} className="p-8 text-center text-slate-400 font-sans">
                     No matching audit records found.
                   </td>
                 </tr>
@@ -123,7 +123,7 @@ export default function AuditLogs() {
                     </td>
                     <td className="p-4">
                       <span className="font-bold text-sky-400 block">{log.eventType}</span>
-                      <span className="text-[10px] text-slate-500">{log.id}</span>
+                      <span className="text-[10px] text-slate-400">{log.id}</span>
                     </td>
                     <td className="p-4 font-sans text-slate-200 max-w-md">
                       {log.description}

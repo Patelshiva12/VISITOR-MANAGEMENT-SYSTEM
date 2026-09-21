@@ -23,12 +23,12 @@ export function VmsProvider({ children }) {
 
   const [visitors, setVisitors] = useState(() => {
     const saved = localStorage.getItem('vms_visitors');
-    return (saved && JSON.parse(saved).length > 0) ? JSON.parse(saved) : initialVisitors;
+    return saved !== null ? JSON.parse(saved) : [];
   });
 
   const [visits, setVisits] = useState(() => {
     const saved = localStorage.getItem('vms_visits');
-    return (saved && JSON.parse(saved).length > 0) ? normalizeVisits(JSON.parse(saved)) : normalizeVisits(initialVisits);
+    return saved !== null ? normalizeVisits(JSON.parse(saved)) : [];
   });
 
   const [hosts] = useState(initialHosts);
@@ -36,23 +36,25 @@ export function VmsProvider({ children }) {
 
   const [departments, setDepartments] = useState(() => {
     const saved = localStorage.getItem('vms_departments');
-    return saved ? JSON.parse(saved) : initialDepartments;
+    return saved !== null ? JSON.parse(saved) : initialDepartments;
   });
 
   const [auditLogs, setAuditLogs] = useState(() => {
     const saved = localStorage.getItem('vms_audit_logs');
-    return (saved && JSON.parse(saved).length > 0) ? JSON.parse(saved) : initialAuditLogs;
+    return saved !== null ? JSON.parse(saved) : [];
   });
 
   const [activeAlerts, setActiveAlerts] = useState([]);
 
-  // Auto-sync with Django Backend on startup
+  // Direct sync with Django Backend on startup
   useEffect(() => {
     async function syncBackend() {
       try {
         const backendVisits = await VmsBackendApi.getVisits();
         if (backendVisits && Array.isArray(backendVisits)) {
-          setVisits(normalizeVisits(backendVisits));
+          const normBackend = normalizeVisits(backendVisits);
+          setVisits(normBackend);
+          localStorage.setItem('vms_visits', JSON.stringify(normBackend));
           setIsBackendConnected(true);
         }
       } catch (e) {
@@ -63,13 +65,14 @@ export function VmsProvider({ children }) {
         const backendDepts = await VmsBackendApi.getDepartments();
         if (backendDepts && Array.isArray(backendDepts) && backendDepts.length > 0) {
           setDepartments(backendDepts);
+          localStorage.setItem('vms_departments', JSON.stringify(backendDepts));
         }
       } catch (e) {}
 
       try {
         const backendPersons = await VmsBackendApi.getPersons();
-        if (backendPersons && Array.isArray(backendPersons) && backendPersons.length > 0) {
-          setVisitors(backendPersons.map(p => ({
+        if (backendPersons && Array.isArray(backendPersons)) {
+          const mappedPersons = backendPersons.map(p => ({
             id: p.person_id,
             fullName: p.name,
             phone: p.phone,
@@ -82,9 +85,12 @@ export function VmsProvider({ children }) {
             isBlacklisted: p.status === 'BLACKLISTED',
             complianceStatus: p.compliance_status || 'COMPLIANT',
             allowedDepartments: p.allowed_departments || [],
-            enrolledBiometrics: { face: true, fingerprint: false, iris: false },
+            enrolledBiometrics: { face: Boolean(p.photo), fingerprint: true, iris: false },
+            enrolledFingers: ['LT'],
             laptopSerial: p.declared_laptop_serial || 'NONE'
-          })));
+          }));
+          setVisitors(mappedPersons);
+          localStorage.setItem('vms_visitors', JSON.stringify(mappedPersons));
         }
       } catch (e) {}
     }
@@ -147,7 +153,7 @@ export function VmsProvider({ children }) {
       email: userDetails.email || (role + '@ilizien.com'),
       role,
       gate: role === 'guard' ? gate : undefined,
-      avatar: userDetails.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'
+      avatar: userDetails.avatar || ''
     };
 
     setCurrentUser(user);
@@ -182,22 +188,26 @@ export function VmsProvider({ children }) {
     setAuditLogs(prev => [newLog, ...prev]);
   };
 
-  const registerVisitor = async (visitorData, visitData) => {
-    let visitorId = visitorData.id || ('VIS-' + Math.floor(100 + Math.random() * 900));
+    const registerVisitor = async (visitorData, visitData) => {
+    let visitorId = visitorData?.id || visitorData?.person_id || ('VIS-' + Math.floor(100 + Math.random() * 900));
     const visitId = 'VST-2026-' + Math.floor(100 + Math.random() * 900);
     const passNumber = 'GP-2026-' + Math.floor(100 + Math.random() * 900);
 
-    const allowedDepts = visitorData.allowedDepartments || ['RND', 'IT_INFRA'];
+    const allowedDepts = visitorData?.allowedDepartments || ['RND', 'IT_INFRA'];
+    const fullName = visitorData?.fullName || visitorData?.name || 'Walk-In Visitor';
+    const company = visitorData?.company || visitorData?.organization || 'Spot Walk-In Guest';
+    const phone = visitorData?.phone || '';
+    const enrolledFingers = visitorData?.enrolledFingers || ['LT'];
 
     try {
       const backendPerson = await VmsBackendApi.registerPerson({
         person_id: visitorId,
-        name: visitorData.fullName,
-        organization: visitorData.company,
-        phone: visitorData.phone,
-        email: visitorData.email,
-        category: visitorData.category || 'Business Client / Partner',
-        declared_laptop_serial: visitorData.laptopSerial || 'NONE',
+        name: fullName,
+        organization: company,
+        phone: phone,
+        email: visitorData?.email || '',
+        category: visitorData?.category || 'Business Client / Partner',
+        declared_laptop_serial: visitorData?.laptopSerial || 'NONE',
         allowed_departments: allowedDepts
       });
       if (backendPerson && backendPerson.person_id) {
@@ -205,77 +215,127 @@ export function VmsProvider({ children }) {
       }
     } catch (e) {}
 
+    const targetHost = hosts.find(h => h.id === (visitData?.hostId || 'HST-101')) || hosts[0] || { id: 'HST-101', name: 'Dr. Arvind Menon', department: 'R&D' };
+
     const newVisitor = {
       id: visitorId,
-      fullName: visitorData.fullName,
-      phone: visitorData.phone,
-      email: visitorData.email,
-      company: visitorData.company,
-      photoUrl: visitorData.photoUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
-      idProofType: visitorData.idProofType,
-      idProofNumber: visitorData.idProofNumber,
-      address: visitorData.address,
+      fullName: fullName,
+      phone: phone,
+      email: visitorData?.email || '',
+      company: company,
+      photoUrl: visitorData?.photoUrl || visitorData?.photo || '',
+      idProofType: visitorData?.idProofType || 'Aadhaar Card',
+      idProofNumber: visitorData?.idProofNumber || '',
+      address: visitorData?.address || '',
       isBlacklisted: false,
       complianceStatus: 'COMPLIANT',
       allowedDepartments: allowedDepts,
-      enrolledBiometrics: { face: true, fingerprint: false, iris: false },
-      laptopSerial: visitorData.laptopSerial || 'NONE'
+      enrolledBiometrics: visitorData?.enrolledBiometrics || { face: true, fingerprint: true, iris: false },
+      enrolledFingers: enrolledFingers,
+      laptopSerial: visitorData?.laptopSerial || 'NONE'
     };
 
-    const targetHost = hosts.find(h => h.id === (visitData?.hostId || 'HST-101')) || hosts[0];
-    const newVisit = {
+    const newVisit = normalizeVisit({
       id: visitId,
       passNumber,
+      pass_number: passNumber,
       visitorId,
-      visitorName: visitorData.fullName,
-      visitorCompany: visitorData.company,
-      visitorPhone: visitorData.phone,
+      person_id: visitorId,
+      visitorName: fullName,
+      visitor_name: fullName,
+      visitorCompany: company,
+      visitor_company: company,
+      visitorPhone: phone,
+      visitor_phone: phone,
       visitorPhoto: newVisitor.photoUrl,
+      visitor_photo: newVisitor.photoUrl,
       hostId: targetHost.id,
       hostName: targetHost.name,
       hostDept: targetHost.department,
-      purpose: visitData?.purpose || 'Business Discussion',
+      purpose: visitData?.purpose || 'Spot Walk-In Check-In',
       scheduledTime: visitData?.scheduledTime || new Date().toISOString(),
-      expectedDurationMins: visitData?.expectedDurationMins || 60,
-      checkInTime: null,
+      expectedDurationMins: Number(visitData?.expectedDurationMins || 60),
+      checkInTime: new Date().toISOString(),
       checkOutTime: null,
-      status: 'APPROVED',
-      allowedZones: ['ZONE-01', 'ZONE-02'],
+      status: 'CHECKED_IN',
+      allowedZones: visitData?.allowedZones || ['ZONE-01', 'ZONE-02'],
       allowedDepartments: allowedDepts,
-      gate: currentGate,
+      gate: currentGate || 'Main Gate 01',
       vehicleNumber: visitData?.vehicleNumber || 'N/A',
-      laptopSerial: visitorData.laptopSerial || 'NONE',
-      verifiedBiometrics: [],
-      notes: visitData?.notes || 'Standard Visitor Access'
-    };
+      laptopSerial: visitorData?.laptopSerial || 'NONE',
+      verifiedBiometrics: visitorData?.enrolledBiometrics?.fingerprint ? ['FACE', 'FINGERPRINT'] : ['FACE'],
+      enrolledFingers: enrolledFingers,
+      notes: visitData?.notes || 'Spot Walk-In Registration'
+    });
 
-    setVisitors(prev => [newVisitor, ...prev.filter(v => v.id !== visitorId)]);
-    setVisits(prev => [newVisit, ...prev]);
+    // Also persist visit to backend Django database
+    try {
+      await VmsBackendApi.createVisit({
+        person_id: visitorId,
+        visitor_name: fullName,
+        visitor_company: company,
+        visitor_phone: phone,
+        visitor_photo: newVisitor.photoUrl,
+        host_id: targetHost.id,
+        host_name: targetHost.name,
+        host_department: targetHost.department,
+        purpose: newVisit.purpose,
+        scheduled_time: newVisit.scheduledTime,
+        expected_duration_mins: newVisit.expectedDurationMins,
+        vehicle_number: newVisit.vehicleNumber,
+        allowed_zones: newVisit.allowedZones,
+        allowed_departments: allowedDepts
+      });
+    } catch (e) {
+      console.warn('Backend createVisit sync note:', e.message);
+    }
 
-    logAudit('VISITOR_REGISTERED', 'Registered visitor ' + newVisitor.fullName + ' with access to ' + allowedDepts.join(', '), 'SUCCESS');
+    setVisitors(prev => {
+      const updated = [newVisitor, ...prev.filter(v => v.id !== visitorId)];
+      localStorage.setItem('vms_visitors', JSON.stringify(updated));
+      return updated;
+    });
+
+    setVisits(prev => {
+      const updated = [newVisit, ...prev.filter(v => v.id !== visitId)];
+      localStorage.setItem('vms_visits', JSON.stringify(updated));
+      return updated;
+    });
+
+    logAudit('VISITOR_REGISTERED', 'Registered visitor ' + fullName + ' with access to ' + allowedDepts.join(', '), 'SUCCESS', currentGate);
     return { visitor: newVisitor, visit: newVisit };
   };
 
-  const registerWalkInVisitor = async (walkInData) => {
-    return registerVisitor({
-      id: walkInData.personId || ('VIS-' + Math.floor(100 + Math.random() * 900)),
-      fullName: walkInData.name,
-      company: walkInData.company,
-      phone: walkInData.phone,
-      email: walkInData.email || '',
-      idProofType: walkInData.idProofType,
-      idProofNumber: walkInData.idProofNumber,
-      address: walkInData.address || '',
-      photoUrl: walkInData.photo || '',
-      category: walkInData.category || 'Walk-In Guest',
-      allowedDepartments: walkInData.allowedDepartments || ['RND', 'IT_INFRA']
-    }, {
-      hostId: walkInData.hostId || 'HST-101',
-      purpose: walkInData.purpose || 'Spot Walk-In Check-In',
-      vehicleNumber: walkInData.vehicleNumber || 'N/A',
-      laptopSerial: walkInData.laptopSerial || 'NONE',
-      expectedDurationMins: walkInData.duration || 60
-    });
+  const registerWalkInVisitor = async (visitorOrWalkInData, visitDataOverride = null, biometricsData = null) => {
+    // Handle both 1-param walkInData object and (visitorPayload, visitPayload, biometrics) 3-param signatures
+    const visitorData = {
+      id: visitorOrWalkInData?.id || visitorOrWalkInData?.personId || ('VIS-' + Math.floor(100 + Math.random() * 900)),
+      fullName: visitorOrWalkInData?.fullName || visitorOrWalkInData?.name || 'Walk-In Visitor',
+      company: visitorOrWalkInData?.company || visitorOrWalkInData?.organization || 'Spot Walk-In Guest',
+      phone: visitorOrWalkInData?.phone || '',
+      email: visitorOrWalkInData?.email || '',
+      idProofType: visitorOrWalkInData?.idProofType || 'Aadhaar Card',
+      idProofNumber: visitorOrWalkInData?.idProofNumber || '',
+      address: visitorOrWalkInData?.address || '',
+      photoUrl: visitorOrWalkInData?.photoUrl || visitorOrWalkInData?.photo || '',
+      category: visitorOrWalkInData?.category || visitorOrWalkInData?.visitorCategory || 'Walk-In Guest',
+      allowedDepartments: visitorOrWalkInData?.allowedDepartments || ['RND', 'IT_INFRA'],
+      enrolledBiometrics: visitorOrWalkInData?.enrolledBiometrics || { face: true, fingerprint: false, iris: false },
+      laptopSerial: visitorOrWalkInData?.laptopSerial || 'NONE'
+    };
+
+    const visitData = {
+      hostId: visitDataOverride?.hostId || visitorOrWalkInData?.hostId || 'HST-101',
+      purpose: visitDataOverride?.purpose || visitorOrWalkInData?.purpose || 'Spot Walk-In Check-In',
+      vehicleNumber: visitDataOverride?.vehicleNumber || visitorOrWalkInData?.vehicleNumber || 'N/A',
+      laptopSerial: visitDataOverride?.laptopSerial || visitorOrWalkInData?.laptopSerial || 'NONE',
+      expectedDurationMins: visitDataOverride?.expectedDurationMins || visitorOrWalkInData?.duration || 60,
+      scheduledTime: visitDataOverride?.scheduledTime || new Date().toISOString(),
+      allowedZones: visitDataOverride?.allowedZones || ['ZONE-01', 'ZONE-02'],
+      notes: visitDataOverride?.notes || 'Walk-In Spot Registration at Gate'
+    };
+
+    return registerVisitor(visitorData, visitData);
   };
 
   const updateVisitor = (visitorId, updatedData) => {

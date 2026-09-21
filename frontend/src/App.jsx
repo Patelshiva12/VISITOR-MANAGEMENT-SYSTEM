@@ -4,6 +4,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import ZoneAlertModal from './components/ZoneAlertModal';
+import ProposalStagesModal from './components/ProposalStagesModal';
 import ToastContainer from './components/ToastContainer';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
@@ -64,6 +65,8 @@ function getInitialPage() {
 
 function MainApp() {
   const [activePage, setActivePage] = useState(getInitialPage);
+  const [stagesModalOpen, setStagesModalOpen] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const { isAuthenticated } = useVms();
 
   // Keep localStorage and URL hash in sync with activePage
@@ -135,7 +138,7 @@ function MainApp() {
             </button>
             <button
               onClick={() => setActivePage('login')}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-sky-400 text-xs font-bold rounded-xl border border-slate-700 flex items-center gap-1.5 transition-all"
+              className="px-4 py-2 bg-slate-800 hover:bg-slate-800 text-sky-400 text-xs font-bold rounded-xl border border-slate-700 flex items-center gap-1.5 transition-all"
             >
               <Lock className="w-3.5 h-3.5" /> Staff Login
             </button>
@@ -188,18 +191,40 @@ function MainApp() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
-      <Navbar activePage={activePage} setActivePage={setActivePage} />
+    <div className="h-screen bg-slate-950 text-slate-100 flex flex-col font-sans overflow-hidden transition-colors duration-200">
+      <Navbar 
+        activePage={activePage} 
+        setActivePage={setActivePage} 
+        onOpenStages={() => setStagesModalOpen(true)}
+        onToggleSidebar={() => setMobileSidebarOpen(prev => !prev)}
+      />
       
-      <div className="flex-1 flex overflow-hidden">
-        <Sidebar activePage={activePage} setActivePage={setActivePage} />
+      {/* Container with Independent Scrolling for Sidebar and Main Page */}
+      <div className="flex-1 flex overflow-hidden min-h-0">
+        <Sidebar 
+          activePage={activePage} 
+          setActivePage={setActivePage} 
+          onOpenStages={() => setStagesModalOpen(true)}
+          isMobileOpen={mobileSidebarOpen}
+          onCloseMobile={() => setMobileSidebarOpen(false)}
+        />
         
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-          <div className="max-w-7xl mx-auto">
+        <main className="flex-1 h-full overflow-y-auto p-4 sm:p-6 lg:p-8 min-h-0">
+          <div className="max-w-7xl mx-auto pb-12">
             {renderActivePage()}
           </div>
         </main>
       </div>
+
+      {/* 10-Stages Proposal Compliance Directory Modal */}
+      <ProposalStagesModal 
+        isOpen={stagesModalOpen}
+        onClose={() => setStagesModalOpen(false)}
+        onNavigate={(route) => {
+          setActivePage(route);
+          setStagesModalOpen(false);
+        }}
+      />
 
       <ZoneAlertModal />
       <ToastContainer />

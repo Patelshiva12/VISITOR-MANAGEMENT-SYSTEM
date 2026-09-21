@@ -93,7 +93,7 @@ export default function ToastContainer() {
                     <h4 className={`text-xs font-black tracking-wide uppercase ${config.titleColor}`}>
                       {toast.title}
                     </h4>
-                    <span className="text-[10px] font-mono text-slate-500 ml-auto">
+                    <span className="text-[10px] font-mono text-slate-400 ml-auto">
                       {toast.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                     </span>
                   </div>

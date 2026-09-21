@@ -37,7 +37,7 @@ export default function LoginPage({ setActivePage }) {
       login('guard', {
         name: 'Officer Sandeep Sharma',
         email: 'guard.desk01@ilizien.com',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'
+        avatar: ''
       }, gate);
       setActivePage('guard');
     } else if (role === 'host') {
@@ -46,14 +46,14 @@ export default function LoginPage({ setActivePage }) {
         name: selectedHost.name,
         email: selectedHost.email,
         department: selectedHost.department,
-        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'
+        avatar: ''
       });
       setActivePage('host-approvals');
     } else if (role === 'admin') {
       login('admin', {
         name: 'Chief Security Officer (Admin)',
         email: 'admin.security@ilizien.com',
-        avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80'
+        avatar: ''
       });
       setActivePage('dashboard');
     } else if (role === 'visitor') {
@@ -75,7 +75,7 @@ export default function LoginPage({ setActivePage }) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-center items-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-center items-center p-4 relative overflow-hidden transition-colors duration-200">
       
       {/* Background glowing gradients */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -92,7 +92,7 @@ export default function LoginPage({ setActivePage }) {
       </div>
 
       {/* Main Login Card */}
-      <div className="w-full max-w-md bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-md relative z-10 space-y-6">
+      <div className="w-full max-w-md bg-slate-900/95 bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-md relative z-10 space-y-6">
         
         {/* Header */}
         <div className="text-center space-y-2">
@@ -177,7 +177,7 @@ export default function LoginPage({ setActivePage }) {
               {selectedRole === 'guard' ? 'Guard Badge / Officer ID' : selectedRole === 'visitor' ? 'Mobile / Reference ID' : 'Work Email Address'}
             </label>
             <div className="relative">
-              <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+              <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
               <input
                 type="text"
                 placeholder={selectedRole === 'guard' ? 'G-8801' : selectedRole === 'visitor' ? '+91 98765 43210' : 'employee@ilizien.com'}
@@ -197,7 +197,7 @@ export default function LoginPage({ setActivePage }) {
                 </a>
               </div>
               <div className="relative">
-                <KeyRound className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+                <KeyRound className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                 <input
                   type="password"
                   placeholder="��������"
@@ -258,7 +258,7 @@ export default function LoginPage({ setActivePage }) {
         </form>
 
         {/* Footer info */}
-        <div className="text-center text-[10px] text-slate-500 pt-2 border-t border-slate-800">
+        <div className="text-center text-[10px] text-slate-400 pt-2 border-t border-slate-800">
           Ilizien Private Limited � Multi-Modal Identity Suite
         </div>
 

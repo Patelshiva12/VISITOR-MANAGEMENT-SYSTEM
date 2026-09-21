@@ -35,7 +35,7 @@ export default function NotificationsDrawer({ isOpen, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex justify-end no-print animate-in fade-in duration-200">
-      <div className="w-full max-w-md bg-slate-900 border-l border-slate-800 h-full p-6 flex flex-col justify-between shadow-2xl animate-in slide-in-from-right duration-300">
+      <div className="w-full max-w-md bg-slate-900 border-l border-slate-800 transition-colors duration-150 h-full p-6 flex flex-col justify-between shadow-2xl animate-in slide-in-from-right duration-300">
         
         {/* Drawer Header */}
         <div>
@@ -72,14 +72,14 @@ export default function NotificationsDrawer({ isOpen, onClose }) {
                     {getEventIcon(item.eventType, item.severity)}
                     <span className="font-bold text-white text-xs">{item.eventType.replace(/_/g, ' ')}</span>
                   </div>
-                  <span className="text-[10px] font-mono text-slate-500">{formatTimeOnly(item.timestamp)}</span>
+                  <span className="text-[10px] font-mono text-slate-400">{formatTimeOnly(item.timestamp)}</span>
                 </div>
 
                 <p className="text-[11px] text-slate-300 pl-6 leading-relaxed">
                   {item.description}
                 </p>
 
-                <div className="flex justify-between items-center text-[10px] text-slate-500 pl-6 pt-1">
+                <div className="flex justify-between items-center text-[10px] text-slate-400 pl-6 pt-1">
                   <span>Actor: {item.performedBy}</span>
                   <span className="font-mono">Gate: {item.gate}</span>
                 </div>

@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import { formatTimeOnly, formatDateOnly, formatDuration, getElapsedMinutes } from '../utils/formatters';
 import GatePassModal from '../components/GatePassModal';
+import Pagination from '../components/Pagination';
 
 export default function Dashboard({ setActivePage }) {
   const { 
@@ -49,6 +50,12 @@ export default function Dashboard({ setActivePage }) {
   const [selectedPassVisit, setSelectedPassVisit] = useState(null);
   const [activeDetailCard, setActiveDetailCard] = useState('REGISTERED'); // 'REGISTERED' | 'RECOGNIZED' | 'UNRECOGNIZED' | 'ACCURACY' | 'INSIDE' | 'APPROVED' | 'PENDING' | 'OVERSTAY'
   const [detailSearch, setDetailSearch] = useState('');
+  const ITEMS_PER_PAGE = 10;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeDetailCard, detailSearch]);
   const [, setTicker] = useState(0);
 
   // Real-time ticking for live elapsed timers
@@ -363,7 +370,7 @@ export default function Dashboard({ setActivePage }) {
       {/* ========================================================= */}
       {/* 3. DYNAMIC DRILL-DOWN DATA VIEW (CLICK-BASED)             */}
       {/* ========================================================= */}
-      <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-5 shadow-sm">
+      <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl shadow-sm transition-colors duration-150 space-y-5 shadow-sm">
         
         {/* Dynamic Header & Search Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
@@ -449,7 +456,7 @@ export default function Dashboard({ setActivePage }) {
                   <th className="pb-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody className="divide-y divide-slate-200">
                 {visitors
                   .filter(v => {
                     const q = detailSearch.toLowerCase().trim();
@@ -461,19 +468,26 @@ export default function Dashboard({ setActivePage }) {
                       v.id?.toLowerCase().includes(q)
                     );
                   })
+                  .slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
                   .map(v => (
                     <tr key={v.id} className="hover:bg-slate-800/40 transition-colors">
                       <td className="py-3">
                         <div className="flex items-center gap-3">
-                          <img 
-                            src={v.photoUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'} 
-                            alt={v.fullName} 
-                            className="w-10 h-10 rounded-xl object-cover border border-slate-700 shrink-0"
-                          />
+                          {v.photoUrl ? (
+                            <img 
+                              src={v.photoUrl} 
+                              alt={v.fullName} 
+                              className="w-10 h-10 rounded-xl object-cover border border-slate-700 shrink-0"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 shrink-0">
+                              <Users className="w-5 h-5" />
+                            </div>
+                          )}
                           <div>
                             <span className="font-bold text-white block">{v.fullName}</span>
                             <span className="text-[10px] text-sky-400 font-semibold">{v.company || 'Visitor'}</span>
-                            <span className="text-[9px] font-mono text-slate-500">{v.id}</span>
+                            <span className="text-[9px] font-mono text-slate-400">{v.id}</span>
                           </div>
                         </div>
                       </td>
@@ -486,13 +500,13 @@ export default function Dashboard({ setActivePage }) {
                       </td>
                       <td className="py-3">
                         <div className="flex items-center gap-1.5">
-                          <span className={`p-1 rounded ${v.enrolledBiometrics?.face ? 'bg-sky-500/20 text-sky-400' : 'bg-slate-800 text-slate-600'}`} title="Face Burst Enrolled">
+                          <span className={`p-1 rounded ${v.enrolledBiometrics?.face ? 'bg-sky-500/20 text-sky-400' : 'bg-slate-800 text-slate-400'}`} title="Face Burst Enrolled">
                             <Camera className="w-3.5 h-3.5" />
                           </span>
-                          <span className={`p-1 rounded ${v.enrolledBiometrics?.fingerprint ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-600'}`} title="Fingerprint Enrolled">
+                          <span className={`p-1 rounded ${v.enrolledBiometrics?.fingerprint ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400'}`} title="Fingerprint Enrolled">
                             <Fingerprint className="w-3.5 h-3.5" />
                           </span>
-                          <span className={`p-1 rounded ${v.enrolledBiometrics?.iris ? 'bg-purple-500/20 text-purple-400' : 'bg-slate-800 text-slate-600'}`} title="Iris Enrolled">
+                          <span className={`p-1 rounded ${v.enrolledBiometrics?.iris ? 'bg-purple-500/20 text-purple-400' : 'bg-slate-800 text-slate-400'}`} title="Iris Enrolled">
                             <Eye className="w-3.5 h-3.5" />
                           </span>
                         </div>
@@ -512,7 +526,6 @@ export default function Dashboard({ setActivePage }) {
           </div>
         )}
 
-        {/* ------------------------------------------------------------- */}
         {/* VIEW 2: RECOGNIZED BIOMETRIC MATCHES                          */}
         {/* ------------------------------------------------------------- */}
         {activeDetailCard === 'RECOGNIZED' && (
@@ -527,7 +540,7 @@ export default function Dashboard({ setActivePage }) {
                   <th className="pb-3 text-right">Timestamp</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody className="divide-y divide-slate-200">
                 {liveBiometricFeed
                   .filter(e => e.type === 'RECOGNIZED')
                   .filter(e => {
@@ -584,7 +597,7 @@ export default function Dashboard({ setActivePage }) {
                   <th className="pb-3 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody className="divide-y divide-slate-200">
                 {liveBiometricFeed
                   .filter(e => e.type === 'UNRECOGNIZED')
                   .map(evt => (
@@ -739,7 +752,7 @@ export default function Dashboard({ setActivePage }) {
         {activeDetailCard === 'INSIDE' && (
           <div className="overflow-x-auto">
             {insideVisits.length === 0 ? (
-              <div className="p-8 text-center bg-slate-950/60 rounded-2xl border border-slate-800 text-slate-500 text-xs">
+              <div className="p-8 text-center bg-slate-950/60 rounded-2xl border border-slate-800 text-slate-400 text-xs">
                 No visitors currently inside premises.
               </div>
             ) : (
@@ -753,13 +766,14 @@ export default function Dashboard({ setActivePage }) {
                     <th className="pb-3 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60">
+                <tbody className="divide-y divide-slate-200">
                   {insideVisits
                     .filter(v => {
                       const q = detailSearch.toLowerCase().trim();
                       if (!q) return true;
                       return v.visitorName?.toLowerCase().includes(q) || v.visitorCompany?.toLowerCase().includes(q) || v.hostName?.toLowerCase().includes(q);
                     })
+                    .slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
                     .map(visit => {
                       const elapsed = getElapsedMinutes(visit.checkInTime);
                       const isOverstay = elapsed > visit.expectedDurationMins;
@@ -767,11 +781,17 @@ export default function Dashboard({ setActivePage }) {
                         <tr key={visit.id} className="hover:bg-slate-800/40 transition-colors">
                           <td className="py-3">
                             <div className="flex items-center gap-3">
-                              <img 
-                                src={visit.visitorPhoto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'} 
-                                alt={visit.visitorName} 
-                                className="w-10 h-10 rounded-xl object-cover border border-slate-700 shrink-0"
-                              />
+                              {visit.visitorPhoto ? (
+                                <img 
+                                  src={visit.visitorPhoto} 
+                                  alt={visit.visitorName} 
+                                  className="w-10 h-10 rounded-xl object-cover border border-slate-700 shrink-0"
+                                />
+                              ) : (
+                                <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 shrink-0">
+                                  <Users className="w-5 h-5" />
+                                </div>
+                              )}
                               <div>
                                 <span className="font-bold text-white block">{visit.visitorName}</span>
                                 <span className="text-[10px] text-slate-400">{visit.visitorCompany}</span>
@@ -823,13 +843,12 @@ export default function Dashboard({ setActivePage }) {
           </div>
         )}
 
-        {/* ------------------------------------------------------------- */}
         {/* VIEW 6: PRE-APPROVED PASSES                                   */}
         {/* ------------------------------------------------------------- */}
         {activeDetailCard === 'APPROVED' && (
           <div className="overflow-x-auto">
             {approvedVisits.length === 0 ? (
-              <div className="p-8 text-center bg-slate-950/60 rounded-2xl border border-slate-800 text-slate-500 text-xs">
+              <div className="p-8 text-center bg-slate-950/60 rounded-2xl border border-slate-800 text-slate-400 text-xs">
                 No pre-approved passes awaiting entry.
               </div>
             ) : (
@@ -843,22 +862,29 @@ export default function Dashboard({ setActivePage }) {
                     <th className="pb-3 text-right">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60">
+                <tbody className="divide-y divide-slate-200">
                   {approvedVisits
                     .filter(v => {
                       const q = detailSearch.toLowerCase().trim();
                       if (!q) return true;
                       return v.visitorName?.toLowerCase().includes(q) || v.passNumber?.toLowerCase().includes(q);
                     })
+                    .slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
                     .map(visit => (
                       <tr key={visit.id} className="hover:bg-slate-800/40 transition-colors">
                         <td className="py-3">
                           <div className="flex items-center gap-3">
-                            <img 
-                              src={visit.visitorPhoto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'} 
-                              alt={visit.visitorName} 
-                              className="w-10 h-10 rounded-xl object-cover border border-slate-700 shrink-0"
-                            />
+                            {visit.visitorPhoto ? (
+                              <img 
+                                src={visit.visitorPhoto} 
+                                alt={visit.visitorName} 
+                                className="w-10 h-10 rounded-xl object-cover border border-slate-700 shrink-0"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 shrink-0">
+                                <Users className="w-5 h-5" />
+                              </div>
+                            )}
                             <div>
                               <span className="font-bold text-white block">{visit.visitorName}</span>
                               <span className="text-[10px] text-slate-400">{visit.visitorCompany}</span>
@@ -892,13 +918,12 @@ export default function Dashboard({ setActivePage }) {
           </div>
         )}
 
-        {/* ------------------------------------------------------------- */}
         {/* VIEW 7: PENDING HOST APPROVALS                                */}
         {/* ------------------------------------------------------------- */}
         {activeDetailCard === 'PENDING' && (
           <div className="overflow-x-auto">
             {pendingVisits.length === 0 ? (
-              <div className="p-8 text-center bg-slate-950/60 rounded-2xl border border-slate-800 text-slate-500 text-xs">
+              <div className="p-8 text-center bg-slate-950/60 rounded-2xl border border-slate-800 text-slate-400 text-xs">
                 No pending host approval requests.
               </div>
             ) : (
@@ -911,22 +936,29 @@ export default function Dashboard({ setActivePage }) {
                     <th className="pb-3 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60">
+                <tbody className="divide-y divide-slate-200">
                   {pendingVisits
                     .filter(v => {
                       const q = detailSearch.toLowerCase().trim();
                       if (!q) return true;
                       return v.visitorName?.toLowerCase().includes(q) || v.hostName?.toLowerCase().includes(q);
                     })
+                    .slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
                     .map(visit => (
                       <tr key={visit.id} className="hover:bg-slate-800/40 transition-colors">
                         <td className="py-3">
                           <div className="flex items-center gap-3">
-                            <img 
-                              src={visit.visitorPhoto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'} 
-                              alt={visit.visitorName} 
-                              className="w-10 h-10 rounded-xl object-cover border border-slate-700 shrink-0"
-                            />
+                            {visit.visitorPhoto ? (
+                              <img 
+                                src={visit.visitorPhoto} 
+                                alt={visit.visitorName} 
+                                className="w-10 h-10 rounded-xl object-cover border border-slate-700 shrink-0"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 shrink-0">
+                                <Users className="w-5 h-5" />
+                              </div>
+                            )}
                             <div>
                               <span className="font-bold text-white block">{visit.visitorName}</span>
                               <span className="text-[10px] text-slate-400">{visit.visitorCompany}</span>
@@ -962,7 +994,6 @@ export default function Dashboard({ setActivePage }) {
           </div>
         )}
 
-        {/* ------------------------------------------------------------- */}
         {/* VIEW 8: OVERSTAY FLAGGED TABLE                                */}
         {/* ------------------------------------------------------------- */}
         {activeDetailCard === 'OVERSTAY' && (
@@ -982,18 +1013,24 @@ export default function Dashboard({ setActivePage }) {
                     <th className="pb-3 text-right">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60">
+                <tbody className="divide-y divide-slate-200">
                   {overstayVisits.map(visit => {
                     const elapsed = getElapsedMinutes(visit.checkInTime);
                     return (
                       <tr key={visit.id} className="hover:bg-slate-800/40 transition-colors bg-rose-950/20">
                         <td className="py-3">
                           <div className="flex items-center gap-3">
-                            <img 
-                              src={visit.visitorPhoto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'} 
-                              alt={visit.visitorName} 
-                              className="w-10 h-10 rounded-xl object-cover border border-rose-500 shrink-0"
-                            />
+                            {visit.visitorPhoto ? (
+                              <img 
+                                src={visit.visitorPhoto} 
+                                alt={visit.visitorName} 
+                                className="w-10 h-10 rounded-xl object-cover border border-rose-500 shrink-0"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 rounded-xl bg-rose-950/40 border border-rose-500/40 flex items-center justify-center text-rose-300 shrink-0">
+                                <Users className="w-5 h-5" />
+                              </div>
+                            )}
                             <div>
                               <span className="font-bold text-white block">{visit.visitorName}</span>
                               <span className="text-[10px] text-slate-400">{visit.visitorCompany}</span>
@@ -1032,6 +1069,39 @@ export default function Dashboard({ setActivePage }) {
           </div>
         )}
 
+        {/* 10-Item Responsive Pagination Footer */}
+        {(() => {
+          let count = 0;
+          const q = detailSearch.toLowerCase().trim();
+          if (activeDetailCard === 'REGISTERED') {
+            count = visitors.filter(v => !q || v.fullName?.toLowerCase().includes(q) || v.company?.toLowerCase().includes(q) || v.phone?.toLowerCase().includes(q) || v.id?.toLowerCase().includes(q)).length;
+          } else if (activeDetailCard === 'INSIDE') {
+            count = insideVisits.filter(v => !q || v.visitorName?.toLowerCase().includes(q) || v.visitorCompany?.toLowerCase().includes(q) || v.hostName?.toLowerCase().includes(q)).length;
+          } else if (activeDetailCard === 'APPROVED') {
+            count = approvedVisits.filter(v => !q || v.visitorName?.toLowerCase().includes(q) || v.visitorCompany?.toLowerCase().includes(q) || v.hostName?.toLowerCase().includes(q)).length;
+          } else if (activeDetailCard === 'PENDING') {
+            count = pendingVisits.filter(v => !q || v.visitorName?.toLowerCase().includes(q) || v.visitorCompany?.toLowerCase().includes(q) || v.hostName?.toLowerCase().includes(q)).length;
+          } else if (activeDetailCard === 'OVERSTAY') {
+            count = overstayVisits.length;
+          } else if (activeDetailCard === 'RECOGNIZED') {
+            count = liveBiometricFeed.filter(e => e.type === 'RECOGNIZED').filter(e => !q || e.name?.toLowerCase().includes(q) || e.desc?.toLowerCase().includes(q) || e.gate?.toLowerCase().includes(q)).length;
+          } else if (activeDetailCard === 'UNRECOGNIZED') {
+            count = liveBiometricFeed.filter(e => e.type === 'UNRECOGNIZED').length;
+          }
+          
+          if (count > 0) {
+            return (
+              <Pagination
+                currentPage={currentPage}
+                totalItems={count}
+                pageSize={ITEMS_PER_PAGE}
+                onPageChange={setCurrentPage}
+                itemLabel="records"
+              />
+            );
+          }
+          return null;
+        })()}
       </div>
 
       {/* Gate Pass Modal Preview */}

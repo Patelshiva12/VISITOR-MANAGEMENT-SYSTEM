@@ -33,6 +33,7 @@ class ZoneSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class VisitResponseSerializer(serializers.ModelSerializer):
+    enrolled_fingers = serializers.SerializerMethodField()
     visitor_name = serializers.SerializerMethodField()
     visitor_company = serializers.SerializerMethodField()
     visitor_phone = serializers.SerializerMethodField()
@@ -68,6 +69,7 @@ class VisitResponseSerializer(serializers.ModelSerializer):
             'allowed_zones',
             'allowed_departments',
             'verified_biometrics',
+            'enrolled_fingers',
             'notes',
         ]
 
@@ -86,10 +88,21 @@ class VisitResponseSerializer(serializers.ModelSerializer):
     def get_visitor_category(self, obj):
         return obj.person.category if (obj.person and obj.person.category) else "Business Client"
 
+    def get_enrolled_fingers(self, obj):
+        if obj.person:
+            tmpls = BiometricTemplate.objects.filter(person=obj.person, modality="FINGERPRINT", revoked_at__isnull=True)
+            fingers = []
+            for t in tmpls:
+                code = t.template_version.replace('fingerprint-', '').replace('-v1.0', '').upper()
+                if code and code not in fingers:
+                    fingers.append(code)
+            return fingers if fingers else (["LT"] if "FINGERPRINT" in obj.verified_biometrics else [])
+        return []
+
     def get_visitor_photo(self, obj):
         if obj.person and obj.person.photo:
             return obj.person.photo
-        return "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80"
+        return ""
 
 class VisitCreateSerializer(serializers.Serializer):
     id = serializers.CharField(required=False, allow_blank=True, allow_null=True)
@@ -114,6 +127,8 @@ class VisitCreateSerializer(serializers.Serializer):
     allowed_departments = serializers.ListField(child=serializers.CharField(), required=False, default=list)
     notes = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     face_image_base64 = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    enrolled_fingers = serializers.ListField(child=serializers.CharField(), required=False, default=list)
+    verified_biometrics = serializers.ListField(child=serializers.CharField(), required=False, default=list)
 
 class VisitApprovalSerializer(serializers.Serializer):
     allowed_zones = serializers.ListField(child=serializers.CharField(), default=["ZONE-01", "ZONE-02"])
@@ -139,6 +154,7 @@ class BiometricEnrollSerializer(serializers.Serializer):
     modality = serializers.CharField(max_length=32)
     raw_payload_base64 = serializers.CharField()
     device_id = serializers.CharField(max_length=64, default="TERMINAL-01")
+    finger_code = serializers.CharField(max_length=16, required=False, default="")
 
 class FaceVerifySerializer(serializers.Serializer):
     live_frame_base64 = serializers.CharField()

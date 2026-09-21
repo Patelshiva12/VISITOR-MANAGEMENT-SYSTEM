@@ -6,6 +6,14 @@ from vms_api.views import (
 )
 
 urlpatterns = [
+    # SecuGen & VMS Direct Aliases
+    re_path(r'^vms/biometrics/secugen-status/?$', biometric_views.secugen_device_status, name='vms-secugen-status'),
+    re_path(r'^vms/biometrics/secugen-capture/?$', biometric_views.secugen_custom_capture, name='vms-secugen-capture'),
+    re_path(r'^vms/biometrics/verify-fingerprint/?$', biometric_views.verify_fingerprint, name='vms-verify-fingerprint'),
+    re_path(r'^vms/biometrics/enroll/?$', biometric_views.enroll_biometric, name='vms-enroll'),
+    re_path(r'^vms/biometrics/mfs110-status/?$', biometric_views.mfs110_device_status, name='vms-mfs110-status'),
+    re_path(r'^vms/biometrics/custom-capture/?$', biometric_views.mfs110_custom_capture, name='vms-custom-capture'),
+
     # 1. Authentication
     re_path(r'^auth/login/?$', auth_views.login_view, name='auth-login'),
 
@@ -36,6 +44,11 @@ urlpatterns = [
     re_path(r'^biometrics/verify-face/?$', biometric_views.verify_face, name='biometrics-verify-face'),
     re_path(r'^biometrics/verify-fingerprint/?$', biometric_views.verify_fingerprint, name='biometrics-verify-fingerprint'),
     re_path(r'^biometrics/recognize-stream-faces/?$', biometric_views.recognize_stream_faces_view, name='biometrics-recognize-stream-faces'),
+    re_path(r'^biometrics/mfs110-status/?$', biometric_views.mfs110_device_status, name='biometrics-mfs110-status'),
+    re_path(r'^biometrics/custom-capture/?$', biometric_views.mfs110_custom_capture, name='biometrics-custom-capture'),
+    re_path(r'^biometrics/toggle-led/?$', biometric_views.mfs110_toggle_led, name='biometrics-toggle-led'),
+    re_path(r'^biometrics/secugen-status/?$', biometric_views.secugen_device_status, name='biometrics-secugen-status'),
+    re_path(r'^biometrics/secugen-capture/?$', biometric_views.secugen_custom_capture, name='biometrics-secugen-capture'),
 
     # 6. Zone Turnstiles
     re_path(r'^zones/scan-door/?$', zone_views.scan_zone_door, name='zones-scan-door'),

@@ -40,7 +40,7 @@ export default function PreRegistration({ setActivePage, isPublicView = false })
     vehicleNumber: '',
     laptopSerial: '',
     notes: '',
-    photoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80'
+    photoUrl: ''
   });
 
   const [isTakingPhoto, setIsTakingPhoto] = useState(false);
@@ -219,7 +219,7 @@ export default function PreRegistration({ setActivePage, isPublicView = false })
             </div>
           </div>
 
-          <p className="text-[11px] text-slate-500">
+          <p className="text-[11px] text-slate-400">
             Show your Pass Reference number or registered phone at the security gate upon arrival for rapid biometric check-in.
           </p>
 
@@ -243,7 +243,7 @@ export default function PreRegistration({ setActivePage, isPublicView = false })
                   vehicleNumber: '',
                   laptopSerial: '',
                   notes: '',
-                  photoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80'
+                  photoUrl: ''
                 });
               }}
               className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition-colors"
@@ -252,7 +252,7 @@ export default function PreRegistration({ setActivePage, isPublicView = false })
             </button>
             <button
               onClick={() => setActivePage('landing')}
-              className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-sky-600/30 flex items-center gap-1.5 transition-all"
+              className="px-5 py-2.5 bg-sky-600 hover:bg-sky-950/600 text-white text-xs font-bold rounded-xl shadow-lg shadow-sky-600/30 flex items-center gap-1.5 transition-all"
             >
               <Home className="w-3.5 h-3.5" /> Back to Home Page
             </button>
@@ -279,7 +279,7 @@ export default function PreRegistration({ setActivePage, isPublicView = false })
         </span>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-slate-900 border border-slate-800 p-6 sm:p-8 rounded-3xl shadow-sm space-y-6">
+      <form onSubmit={handleSubmit} className="bg-slate-900 border border-slate-800 p-6 sm:p-8 rounded-3xl shadow-sm transition-colors duration-150 shadow-sm space-y-6">
         
         {/* Step 1: Personal & Category Details */}
         <div className="space-y-4">
@@ -293,7 +293,7 @@ export default function PreRegistration({ setActivePage, isPublicView = false })
                 Mobile Number * (Auto-Lookup)
               </label>
               <div className="relative">
-                <Phone className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+                <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                 <input
                   type="tel"
                   required
@@ -304,7 +304,7 @@ export default function PreRegistration({ setActivePage, isPublicView = false })
                   className="w-full bg-slate-950 text-xs pl-9 pr-3 py-2.5 rounded-xl border border-slate-700 text-white focus:outline-none focus:border-sky-500"
                 />
               </div>
-              <span className="text-[10px] text-slate-500 mt-1 block">Type registered phone to auto-fill repeat visitor profile</span>
+              <span className="text-[10px] text-slate-400 mt-1 block">Type registered phone to auto-fill repeat visitor profile</span>
             </div>
 
             <div>
@@ -338,7 +338,7 @@ export default function PreRegistration({ setActivePage, isPublicView = false })
             <div>
               <label className="text-xs font-semibold text-slate-300 block mb-1">Email Address</label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+                <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                 <input
                   type="email"
                   placeholder="ramesh@company.com"
@@ -352,7 +352,7 @@ export default function PreRegistration({ setActivePage, isPublicView = false })
             <div>
               <label className="text-xs font-semibold text-slate-300 block mb-1">Company / Organization</label>
               <div className="relative">
-                <Building2 className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+                <Building2 className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                 <input
                   type="text"
                   placeholder="e.g. Siemens / TCS / Individual"
@@ -366,7 +366,7 @@ export default function PreRegistration({ setActivePage, isPublicView = false })
             <div>
               <label className="text-xs font-semibold text-slate-300 block mb-1">Permanent Address</label>
               <div className="relative">
-                <MapPin className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+                <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                 <input
                   type="text"
                   placeholder="e.g. Sector 25, Gurgaon, Haryana"
@@ -507,7 +507,7 @@ export default function PreRegistration({ setActivePage, isPublicView = false })
             <div>
               <label className="text-xs font-semibold text-slate-300 block mb-1">Vehicle Registration # (Optional)</label>
               <div className="relative">
-                <Car className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+                <Car className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                 <input
                   type="text"
                   placeholder="e.g. DL-01-AB-1234"
@@ -521,7 +521,7 @@ export default function PreRegistration({ setActivePage, isPublicView = false })
             <div>
               <label className="text-xs font-semibold text-slate-300 block mb-1">Declared Laptop Serial / Asset Tag</label>
               <div className="relative">
-                <Laptop className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+                <Laptop className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                 <input
                   type="text"
                   placeholder="e.g. DELL-LAT-7420-SN9912"

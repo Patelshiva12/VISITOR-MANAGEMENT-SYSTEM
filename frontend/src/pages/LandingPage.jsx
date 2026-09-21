@@ -85,7 +85,7 @@ export default function LandingPage({ setActivePage }) {
             
             <button
               onClick={() => setActivePage('login')}
-              className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-sky-600/30 flex items-center gap-1.5 transition-all"
+              className="px-4 py-2 bg-sky-600 hover:bg-sky-950/600 text-white rounded-xl text-xs font-bold shadow-lg shadow-sky-600/30 flex items-center gap-1.5 transition-all"
             >
               <Lock className="w-3.5 h-3.5" /> Portal Login
             </button>
@@ -181,7 +181,9 @@ export default function LandingPage({ setActivePage }) {
               </div>
               <h3 className="text-base font-bold text-white">8MP Facial Recognition</h3>
               <p className="text-xs text-slate-400 leading-relaxed">
-                OpenCV frame acquisition $ightarrow$ SCRFD face detection $ightarrow$ ArcFace (InsightFace) facial embedding match with sub-second accuracy.
+                OpenCV frame acquisition $
+ightarrow$ SCRFD face detection $
+ightarrow$ ArcFace (InsightFace) facial embedding match with sub-second accuracy.
               </p>
               <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-[11px] font-mono text-slate-300 space-y-1">
                 <div className="flex justify-between">
@@ -264,7 +266,7 @@ export default function LandingPage({ setActivePage }) {
             const Icon = item.icon;
             return (
               <div key={idx} className="bg-slate-900 border border-slate-800 p-5 rounded-2xl relative overflow-hidden space-y-3">
-                <span className="text-2xl font-black text-slate-800 absolute right-4 top-4 font-mono">{item.step}</span>
+                <span className="text-2xl font-black text-slate-200 absolute right-4 top-4 font-mono">{item.step}</span>
                 <div className="p-2 bg-sky-500/10 text-sky-400 rounded-xl w-fit border border-sky-500/20">
                   <Icon className="w-5 h-5" />
                 </div>
@@ -298,7 +300,7 @@ export default function LandingPage({ setActivePage }) {
             />
             <button
               type="submit"
-              className="px-6 py-3 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-lg shadow-sky-600/30 transition-all"
+              className="px-6 py-3 bg-sky-600 hover:bg-sky-950/600 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-lg shadow-sky-600/30 transition-all"
             >
               <Search className="w-4 h-4" /> Check Status
             </button>
@@ -358,14 +360,14 @@ export default function LandingPage({ setActivePage }) {
       </section>
 
       {/* Corporate Footer */}
-      <footer className="mt-auto border-t border-slate-800/80 bg-slate-950 px-6 py-8 text-xs text-slate-500">
+      <footer className="mt-auto border-t border-slate-800/80 bg-slate-950 px-6 py-8 text-xs text-slate-400">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="space-y-1 text-center sm:text-left">
             <div className="flex items-center justify-center sm:justify-start gap-2">
               <span className="font-bold text-slate-300 text-sm">ILIZIEN PRIVATE LIMITED</span>
-              <span className="font-mono text-[10px] text-slate-600">UIN: U36999AP2020PTC114536</span>
+              <span className="font-mono text-[10px] text-slate-400">UIN: U36999AP2020PTC114536</span>
             </div>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-[11px] text-slate-400">
               A-586, A Block, Palam Vihar, Gurgaon 122017 | +91 7720039346 | info@ilizien.com
             </p>
           </div>

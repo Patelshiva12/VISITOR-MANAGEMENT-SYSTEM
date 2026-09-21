@@ -44,7 +44,7 @@ class Command(BaseCommand):
                 "email": "rajesh.khanna@tcs.com",
                 "category": "Contractor / Vendor",
                 "declared_laptop_serial": "TCS-LT-9021",
-                "photo": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80",
+                "photo": "",
                 "status": "ACTIVE"
             },
             {
@@ -56,7 +56,7 @@ class Command(BaseCommand):
                 "email": "priya.sundaram@lntecc.com",
                 "category": "Official Government / Defense Auditor",
                 "declared_laptop_serial": "LT-DELL-552",
-                "photo": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&auto=format&fit=crop&q=80",
+                "photo": "",
                 "status": "ACTIVE"
             },
             {
@@ -68,7 +68,7 @@ class Command(BaseCommand):
                 "email": "vikram.m@siemens.com",
                 "category": "Contractor / Vendor",
                 "declared_laptop_serial": "SM-THINK-882",
-                "photo": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80",
+                "photo": "",
                 "status": "ACTIVE"
             },
             {
@@ -76,11 +76,11 @@ class Command(BaseCommand):
                 "service_no": "SRV-104",
                 "name": "Ananya Roy",
                 "organization": "CyberSec Solutions India",
-                "phone": "+91 98445 67890",
+                "phone": "+91 98455 67890",
                 "email": "ananya.roy@cybersec.in",
                 "category": "Official Government / Defense Auditor",
                 "declared_laptop_serial": "CS-MAC-1402",
-                "photo": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+                "photo": "",
                 "status": "ACTIVE"
             },
             {
@@ -92,7 +92,7 @@ class Command(BaseCommand):
                 "email": "rahul.varma@hexaware.com",
                 "category": "Business Client / Partner",
                 "declared_laptop_serial": "HEX-LEN-991",
-                "photo": "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=300&auto=format&fit=crop&q=80",
+                "photo": "",
                 "status": "ACTIVE"
             }
         ]

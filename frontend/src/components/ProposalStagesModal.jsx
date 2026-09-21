@@ -169,7 +169,7 @@ export default function ProposalStagesModal({ isOpen, onClose, onNavigate }) {
                     </span>
                   </div>
 
-                  <span className="text-[10px] font-mono text-slate-500 block">
+                  <span className="text-[10px] font-mono text-slate-400 block">
                     Proposal Reference: <strong className="text-sky-400">{stage.proposalSection}</strong>
                   </span>
 
@@ -186,8 +186,8 @@ export default function ProposalStagesModal({ isOpen, onClose, onNavigate }) {
                   </div>
                 </div>
 
-                <div className="pt-2 border-t border-slate-900 flex justify-between items-center text-xs">
-                  <span className="font-mono text-[10px] text-slate-500">File: {stage.component}</span>
+                <div className="pt-2 border-t border-slate-800 flex justify-between items-center text-xs">
+                  <span className="font-mono text-[10px] text-slate-400">File: {stage.component}</span>
                   <button
                     onClick={() => {
                       onNavigate(stage.pageRoute);

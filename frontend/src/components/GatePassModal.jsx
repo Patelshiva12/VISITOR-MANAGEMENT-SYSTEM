@@ -35,25 +35,25 @@ export default function GatePassModal({ visit, onClose }) {
   const allowedDeptList = visit.allowedDepartments || [];
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto no-print">
-      <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-xl w-full shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto no-print">
+      <div className="bg-slate-900 border border-slate-700 rounded-2xl sm:rounded-3xl max-w-xl w-full max-h-[94vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         
         {/* Top Action Bar */}
-        <div className="px-6 py-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-3 text-white">
-            <ShieldCheck className="w-5 h-5 text-sky-400" />
-            <div>
-              <span className="font-bold text-sm block">Digital Gate Pass Generator & Printer</span>
-              <span className="text-xs text-slate-400 font-mono">Pass #{visit.passNumber}</span>
+        <div className="px-4 py-3 sm:px-6 sm:py-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-3 text-white min-w-0">
+            <ShieldCheck className="w-5 h-5 text-sky-400 shrink-0" />
+            <div className="min-w-0">
+              <span className="font-bold text-xs sm:text-sm block truncate">Digital Gate Pass Generator</span>
+              <span className="text-[10px] sm:text-xs text-slate-400 font-mono truncate">Pass #{visit.passNumber}</span>
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={handlePrint}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold shadow-md shadow-sky-600/30 transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-600 hover:bg-sky-950/600 text-white rounded-xl text-xs font-bold shadow-md shadow-sky-600/30 transition-all cursor-pointer"
             >
-              <Printer className="w-3.5 h-3.5" /> Print Pass
+              <Printer className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Print Pass</span><span className="sm:hidden">Print</span>
             </button>
             <button
               onClick={onClose}
@@ -65,12 +65,12 @@ export default function GatePassModal({ visit, onClose }) {
         </div>
 
         {/* Layout Switcher Tabs */}
-        <div className="px-6 pt-3 flex items-center justify-between border-b border-slate-800/60 pb-2">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Printer Layout:</span>
-          <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
+        <div className="px-4 sm:px-6 pt-2.5 pb-2 flex flex-wrap items-center justify-between border-b border-slate-800/60 gap-2 shrink-0">
+          <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">Layout:</span>
+          <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
             {[
-              { id: 'BADGE', label: 'PVC ID Badge', icon: CreditCard },
-              { id: 'THERMAL', label: '80mm Thermal', icon: Receipt },
+              { id: 'BADGE', label: 'PVC Badge', icon: CreditCard },
+              { id: 'THERMAL', label: 'Thermal', icon: Receipt },
               { id: 'A4_SHEET', label: 'A4 Sheet', icon: FileText }
             ].map(l => {
               const Icon = l.icon;
@@ -79,7 +79,7 @@ export default function GatePassModal({ visit, onClose }) {
                 <button
                   key={l.id}
                   onClick={() => setPassLayout(l.id)}
-                  className={'flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ' + 
+                  className={'flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-bold transition-all cursor-pointer ' + 
                     (isSelected ? 'bg-sky-600 text-white shadow' : 'text-slate-400 hover:text-slate-200')}
                 >
                   <Icon className="w-3.5 h-3.5" />
@@ -91,7 +91,7 @@ export default function GatePassModal({ visit, onClose }) {
         </div>
 
         {/* Printable Area */}
-        <div className="p-6">
+        <div className="p-3 sm:p-6 flex-1 overflow-y-auto custom-scrollbar">
           <div 
             ref={passRef}
             className="print-area bg-white text-slate-900 rounded-2xl border-2 border-slate-300 shadow-md font-sans overflow-hidden"
@@ -117,12 +117,18 @@ export default function GatePassModal({ visit, onClose }) {
                 {/* Main Content */}
                 <div className="grid grid-cols-3 gap-3">
                   <div className="col-span-1 flex flex-col items-center">
-                    <div className="w-24 h-24 rounded-xl overflow-hidden border-2 border-slate-900 bg-slate-100 relative shadow-inner">
-                      <img 
-                        src={visit.visitorPhoto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'} 
-                        alt={visit.visitorName} 
-                        className="w-full h-full object-cover"
-                      />
+                    <div className="w-24 h-24 rounded-xl overflow-hidden border-2 border-slate-900 bg-slate-100 relative shadow-inner flex items-center justify-center">
+                      {visit.visitorPhoto ? (
+                        <img 
+                          src={visit.visitorPhoto} 
+                          alt={visit.visitorName} 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-tr from-slate-800 to-slate-700 flex items-center justify-center text-white text-2xl font-black">
+                          {(visit.visitorName || 'V').split(' ').map(n => n[0]).filter(Boolean).slice(0, 2).join('').toUpperCase()}
+                        </div>
+                      )}
                     </div>
                     <span className="text-[8px] font-mono font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full border border-emerald-300 mt-1">
                       ✓ PASS ACTIVE
@@ -295,12 +301,18 @@ export default function GatePassModal({ visit, onClose }) {
                 </div>
 
                 <div className="grid grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                  <div className="col-span-1">
-                    <img 
-                      src={visit.visitorPhoto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'} 
-                      alt={visit.visitorName} 
-                      className="w-28 h-28 rounded-xl object-cover border border-slate-400"
-                    />
+                  <div className="col-span-1 flex items-center justify-center">
+                    {visit.visitorPhoto ? (
+                      <img 
+                        src={visit.visitorPhoto} 
+                        alt={visit.visitorName} 
+                        className="w-28 h-28 rounded-xl object-cover border border-slate-400"
+                      />
+                    ) : (
+                      <div className="w-28 h-28 rounded-xl bg-slate-800 text-white flex items-center justify-center text-3xl font-black border border-slate-400">
+                        {(visit.visitorName || 'V').split(' ').map(n => n[0]).filter(Boolean).slice(0, 2).join('').toUpperCase()}
+                      </div>
+                    )}
                   </div>
                   <div className="col-span-2 space-y-1.5 text-xs">
                     <div><strong>Visitor:</strong> {visit.visitorName} ({visit.visitorPhone})</div>
@@ -328,18 +340,18 @@ export default function GatePassModal({ visit, onClose }) {
         </div>
 
         {/* Modal Bottom Actions */}
-        <div className="px-6 py-3.5 bg-slate-950/80 border-t border-slate-800 flex justify-end gap-2">
+        <div className="px-4 py-3 sm:px-6 sm:py-3.5 bg-slate-950/80 border-t border-slate-800 flex justify-end gap-2 shrink-0">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs rounded-xl transition-colors cursor-pointer"
+            className="px-3.5 sm:px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs rounded-xl transition-colors cursor-pointer"
           >
             Close
           </button>
           <button
             onClick={handlePrint}
-            className="px-5 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-lg shadow-sky-600/30 transition-all cursor-pointer"
+            className="px-4 sm:px-5 py-2 bg-sky-600 hover:bg-sky-950/600 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-lg shadow-sky-600/30 transition-all cursor-pointer"
           >
-            <Printer className="w-3.5 h-3.5" /> Print Selected Layout
+            <Printer className="w-3.5 h-3.5" /> Print Pass
           </button>
         </div>
 

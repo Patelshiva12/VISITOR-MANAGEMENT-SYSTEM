@@ -13,7 +13,7 @@ export function normalizeVisit(v) {
   const scheduledTime = v.scheduled_time || v.scheduledTime || new Date().toISOString();
   const allowedZones = v.allowed_zones || v.allowedZones || ['ZONE-01', 'ZONE-02'];
   const verifiedBiometrics = v.verified_biometrics || v.verifiedBiometrics || [];
-  const visitorPhoto = v.visitor_photo || v.visitorPhoto || v.photo || (v.person && v.person.photo) || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80';
+  const visitorPhoto = v.visitor_photo || v.visitorPhoto || v.photo || (v.person && v.person.photo) || '';
 
   return {
     ...v,

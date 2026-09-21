@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useVms } from '../context/VmsContext';
-import { VmsBackendApi } from '../services/api';
+import { VmsBackendApi, toastService } from '../services/api';
+import { captureMantraFingerprint, captureSecuGenFingerprint } from '../services/mantraBiometricService';
 import { 
   Camera, 
   Fingerprint, 
@@ -75,7 +76,7 @@ export default function WalkInRegistrationModal({ isOpen = true, onClose, onComp
 
   // Step 2: Biometrics Viewport Mode ('FACE' | 'FINGERPRINT' | 'IRIS')
   const [activeBiometricView, setActiveBiometricView] = useState('FACE');
-  const [selectedFingerDropdown, setSelectedFingerDropdown] = useState('R_INDEX');
+  const [selectedFingerDropdown, setSelectedFingerDropdown] = useState('LT');
 
   // Face Capture & AI Training State (10 Distinct Multi-Angle Cropped Images)
   const [isLiveCameraActive, setIsLiveCameraActive] = useState(false);
@@ -358,32 +359,23 @@ export default function WalkInRegistrationModal({ isOpen = true, onClose, onComp
 
     setPhotoGallery(capturedGallery);
     setPrimaryPhotoIndex(0);
-    const masterCroppedPhoto = capturedGallery[0]?.dataUrl;
 
-    // AI Training Phase
-    setAiTrainingStatus('TRAINING');
-    setTrainingProgress(90);
-    setAiTrainingMessage(`Training 512-dim ArcFace Embedding for Person ID ${registeredPerson.person_id}...`);
-
-    try {
-      // Call Backend to Enroll Biometric & Save in Database
-      const enrollRes = await VmsBackendApi.enrollBiometric(
-        registeredPerson.person_id,
-        'FACE',
-        masterCroppedPhoto
-      ).catch(() => null);
-
-      if (enrollRes && enrollRes.cropped_photo) {
-        // Updated cropped master photo from backend
-      }
-    } catch (err) {
-      console.warn('Enrollment API note:', err);
-    }
-
+    // AI Training Phase Complete
     setTrainingProgress(100);
     setAiTrainingStatus('TRAINED');
-    setAiTrainingMessage(`✓ 10 Multi-Angle Cropped Photos Auto-Captured & ArcFace AI Model Trained for ID ${registeredPerson.person_id}!`);
-    logAudit('BIOMETRIC_ENROLLED', `10 Multi-angle cropped photos auto-captured & ArcFace model trained for ${registeredPerson.name} (${registeredPerson.person_id})`, 'SUCCESS', currentGate);
+    setAiTrainingMessage(`✓ 10 Multi-Angle Cropped Photos Auto-Captured for ID ${registeredPerson.person_id}!`);
+    logAudit('BIOMETRIC_CAPTURED', `10 Multi-angle cropped photos auto-captured for ${registeredPerson.name} (${registeredPerson.person_id})`, 'SUCCESS', currentGate);
+    
+    // Auto-enroll face template immediately upon face capture completion (not on gate pass click)
+    const primaryFace = capturedGallery[0]?.dataUrl;
+    if (primaryFace) {
+      try {
+        await VmsBackendApi.enrollBiometric(registeredPerson.person_id, 'FACE', primaryFace, 'CAMERA-01');
+      } catch (e) {
+        console.warn('Face biometric enroll note:', e);
+      }
+    }
+
     stopLiveCamera();
     isCapturingRef.current = false;
   };
@@ -400,29 +392,69 @@ export default function WalkInRegistrationModal({ isOpen = true, onClose, onComp
     startLiveCamera();
   };
 
-  // Optional Fingerprint Laser Scan
-  const handleTriggerFingerprintScan = (fId = selectedFingerDropdown) => {
+  // Optional Fingerprint Laser Scan & Database Enrolment (Real Hardware Driver)
+  const handleTriggerFingerprintScan = async (fId = selectedFingerDropdown) => {
     setActiveBiometricView('FINGERPRINT');
     setIsFingerScanning(true);
-    setFingerScanProgress(0);
+    setFingerScanProgress(30);
 
-    let step = 0;
-    const interval = setInterval(() => {
-      step += 15;
-      setFingerScanProgress(Math.min(100, step));
-      if (step >= 100) {
-        clearInterval(interval);
+    const targetPersonId = registeredPerson?.person_id || `VIS-${Date.now().toString().slice(-4)}`;
+
+    try {
+      toastService.info(`🟢 SecuGen Active: Place finger (${fId}) on Hamster Pro 20 Green optical glass...`, 'Hardware Scanner');
+      
+      const captureResult = await captureMantraFingerprint({
+        fingerName: fId,
+        fingerCode: fId,
+        personId: targetPersonId,
+        timeout: 12000,
+        quality: 20
+      });
+
+      if (!captureResult || !captureResult.success) {
         setIsFingerScanning(false);
-        setEnrolledFingers(prev => ({
-          ...prev,
-          [fId]: {
-            enrolledAt: new Date().toISOString(),
-            nfiqScore: 99.4,
-            minutiaeCount: 54
-          }
-        }));
+        setFingerScanProgress(0);
+        toastService.error(captureResult?.message || `❌ No finger placed on SecuGen scanner. Please touch the Green optical glass.`, 'Scan Timeout');
+        return;
       }
-    }, 150);
+
+      const rawPayload = captureResult.templateBase64 || captureResult.rawPayload;
+      if (!rawPayload) {
+        setIsFingerScanning(false);
+        setFingerScanProgress(0);
+        toastService.error(`❌ Could not generate biometric template from scanned fingerprint.`, 'Template Error');
+        return;
+      }
+
+      // Enroll in SQLite Database Vault on explicit button click
+      await VmsBackendApi.enrollBiometric(
+        targetPersonId,
+        'FINGERPRINT',
+        rawPayload,
+        'SECUGEN_HU20_AP',
+        fId
+      );
+
+      setFingerScanProgress(100);
+      setIsFingerScanning(false);
+
+      setEnrolledFingers(prev => ({
+        ...prev,
+        [fId]: {
+          enrolledAt: new Date().toISOString(),
+          nfiqScore: captureResult?.qualityScore || 96.5,
+          minutiaeCount: captureResult?.minutiaeCount || 48,
+          payload: rawPayload,
+          bitmapBase64: captureResult?.bitmapBase64 || null
+        }
+      }));
+
+      toastService.success(`✓ Finger ${fId} Enrolled Successfully in Database!`, 'Biometric Enrolled');
+      logAudit('BIOMETRIC_ENROLMENT', `Enrolled finger ${fId} for walk-in visitor ${registeredPerson?.name || 'Visitor'} (ANSI-378 Encrypted)`, 'SUCCESS', currentGate);
+    } catch (e) {
+      setIsFingerScanning(false);
+      toastService.error(`Enrollment failed: ${e.message}`, 'Fingerprint Error');
+    }
   };
 
   // Optional Iris NIR Scan
@@ -451,7 +483,9 @@ export default function WalkInRegistrationModal({ isOpen = true, onClose, onComp
 
     setIsIssuingPass(true);
     try {
-      const primaryPhoto = photoGallery[primaryPhotoIndex]?.dataUrl || photoGallery[0]?.dataUrl;
+      const primaryPhoto = photoGallery[primaryPhotoIndex]?.dataUrl || photoGallery[0]?.dataUrl || '';
+      const hasFingerprint = Object.keys(enrolledFingers).length > 0;
+      const hasFace = photoGallery.length > 0;
 
       const visitorPayload = {
         id: registeredPerson.person_id,
@@ -461,7 +495,13 @@ export default function WalkInRegistrationModal({ isOpen = true, onClose, onComp
         company: registeredPerson.company,
         category: registeredPerson.category,
         photoUrl: primaryPhoto,
-        photo_gallery: photoGallery.map(p => p.dataUrl)
+        photo_gallery: photoGallery.map(p => p.dataUrl),
+        enrolledFingers: Object.keys(enrolledFingers),
+        enrolledBiometrics: {
+          face: hasFace,
+          fingerprint: hasFingerprint,
+          iris: irisEnrolled
+        }
       };
 
       const visitPayload = {
@@ -499,7 +539,7 @@ export default function WalkInRegistrationModal({ isOpen = true, onClose, onComp
           checkInTime: new Date().toISOString(),
           gate: currentGate,
           allowedZones: ['ZONE-01', 'ZONE-02'],
-          verifiedBiometrics: ['FACE']
+          verifiedBiometrics: hasFingerprint ? ['FINGERPRINT'] : ['FACE']
         });
       }
     } catch (err) {
@@ -560,7 +600,7 @@ export default function WalkInRegistrationModal({ isOpen = true, onClose, onComp
               <span>1. Person Details</span>
               {currentStep > 1 && <Check className="w-3.5 h-3.5" />}
             </div>
-            <ChevronRight className="w-4 h-4 text-slate-600" />
+            <ChevronRight className="w-4 h-4 text-slate-400" />
             <div className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition-all ${
               currentStep === 2 
                 ? 'bg-sky-500 text-white border-sky-400 shadow-md shadow-sky-500/25' 
@@ -781,77 +821,65 @@ export default function WalkInRegistrationModal({ isOpen = true, onClose, onComp
                 </button>
               </div>
 
-              {/* Biometrics Mode Selector Tabs (Face is primary auto-scan; Fingerprint unlocks after Face scan) */}
+              {/* Biometrics Mode Selector Tabs (Freely select Face, Fingerprint, or Iris without forced sequence) */}
               <div className="flex flex-wrap items-center gap-2 p-1.5 bg-slate-950 border border-slate-800 rounded-2xl">
                 <button
                   type="button"
                   onClick={() => setActiveBiometricView('FACE')}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
+                  className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
                     activeBiometricView === 'FACE'
                       ? 'bg-sky-600 text-white shadow-md shadow-sky-600/30'
                       : 'text-slate-400 hover:text-white hover:bg-slate-900'
                   }`}
                 >
                   <Camera className="w-4 h-4" />
-                  <span>1. Face Auto-Scan (Primary)</span>
+                  <span>1. Face Scan</span>
                   {photoGallery.length >= 10 ? (
                     <span className="px-1.5 py-0.2 rounded bg-emerald-400 text-slate-950 text-[9px] font-black uppercase">
                       ✓ 10 Done
                     </span>
-                  ) : (
-                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
-                  )}
+                  ) : photoGallery.length > 0 ? (
+                    <span className="px-1.5 py-0.2 rounded bg-sky-400 text-slate-950 text-[9px] font-black">
+                      {photoGallery.length}/10
+                    </span>
+                  ) : null}
                 </button>
 
-                {/* Fingerprint Tab: Locked until 10 face photos are captured & stored */}
+                {/* Fingerprint Tab: Direct Access (No prerequisite) */}
                 <button
                   type="button"
-                  disabled={photoGallery.length < 10 && aiTrainingStatus !== 'TRAINED'}
                   onClick={() => setActiveBiometricView('FINGERPRINT')}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all ${
+                  className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all cursor-pointer ${
                     activeBiometricView === 'FINGERPRINT'
                       ? 'bg-purple-600 text-white border-purple-400 shadow-md shadow-purple-600/30'
-                      : photoGallery.length >= 10 || aiTrainingStatus === 'TRAINED'
-                      ? 'bg-purple-500/20 text-purple-300 border-purple-500/40 hover:bg-purple-600 hover:text-white cursor-pointer animate-pulse'
-                      : 'bg-slate-900/60 text-slate-500 border-slate-800 cursor-not-allowed opacity-60'
+                      : 'bg-slate-900 text-slate-300 border-slate-800 hover:border-purple-500/40 hover:text-purple-300'
                   }`}
-                  title={photoGallery.length < 10 ? 'Complete Face Auto-Scan first (10 Photos)' : 'Fingerprint Scanning Unlocked'}
                 >
                   <Fingerprint className="w-4 h-4" />
-                  <span>2. Optional Fingerprint</span>
-                  {Object.keys(enrolledFingers).length > 0 ? (
-                    <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                  ) : photoGallery.length >= 10 || aiTrainingStatus === 'TRAINED' ? (
-                    <span className="px-1.5 py-0.2 rounded bg-purple-500 text-white text-[9px] font-black uppercase">
-                      Unlocked
+                  <span>2. Fingerprint Scan</span>
+                  {Object.keys(enrolledFingers).length > 0 && (
+                    <span className="px-1.5 py-0.2 rounded bg-emerald-400 text-slate-950 text-[9px] font-black uppercase">
+                      ✓ {Object.keys(enrolledFingers).length} Enrolled
                     </span>
-                  ) : (
-                    <span className="text-[9px] text-slate-500">🔒 Locked</span>
                   )}
                 </button>
 
-                {/* Iris Tab: Optional */}
+                {/* Iris Tab: Direct Access */}
                 <button
                   type="button"
-                  disabled={photoGallery.length < 10 && aiTrainingStatus !== 'TRAINED'}
                   onClick={() => setActiveBiometricView('IRIS')}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all ${
+                  className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all cursor-pointer ${
                     activeBiometricView === 'IRIS'
                       ? 'bg-cyan-600 text-white border-cyan-400 shadow-md shadow-cyan-600/30'
-                      : photoGallery.length >= 10 || aiTrainingStatus === 'TRAINED'
-                      ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40 hover:bg-cyan-600 hover:text-white cursor-pointer'
-                      : 'bg-slate-900/60 text-slate-500 border-slate-800 cursor-not-allowed opacity-60'
+                      : 'bg-slate-900 text-slate-300 border-slate-800 hover:border-cyan-500/40 hover:text-cyan-300'
                   }`}
-                  title={photoGallery.length < 10 ? 'Complete Face Auto-Scan first' : 'Iris Scanning Available'}
                 >
                   <Eye className="w-4 h-4" />
-                  <span>3. Optional Iris</span>
-                  {irisEnrolled ? (
-                    <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                  ) : photoGallery.length >= 10 ? (
-                    <span className="text-[9px] text-cyan-400">Optional</span>
-                  ) : (
-                    <span className="text-[9px] text-slate-500">🔒 Locked</span>
+                  <span>3. Iris Scan</span>
+                  {irisEnrolled && (
+                    <span className="px-1.5 py-0.2 rounded bg-emerald-400 text-slate-950 text-[9px] font-black uppercase">
+                      ✓ Enrolled
+                    </span>
                   )}
                 </button>
               </div>
@@ -898,8 +926,8 @@ export default function WalkInRegistrationModal({ isOpen = true, onClose, onComp
 
                               {/* Center Crosshairs */}
                               <div className="absolute inset-0 flex items-center justify-center opacity-40">
-                                <span className="w-3.5 h-0.5 bg-white"></span>
-                                <span className="h-3.5 w-0.5 bg-white absolute"></span>
+                                <span className="w-3.5 h-0.5 bg-slate-900"></span>
+                                <span className="h-3.5 w-0.5 bg-slate-900 absolute"></span>
                               </div>
 
                               {/* Floating AI Tracking Badge */}
@@ -1045,11 +1073,11 @@ export default function WalkInRegistrationModal({ isOpen = true, onClose, onComp
                       <button
                         type="button"
                         onClick={handleIssueGatePass}
-                        disabled={isIssuingPass || photoGallery.length === 0}
+                        disabled={isIssuingPass || (photoGallery.length === 0 && Object.keys(enrolledFingers).length === 0 && !irisEnrolled)}
                         className={`w-full py-3.5 rounded-2xl text-xs font-black flex items-center justify-center gap-2 transition-all shadow-xl ${
-                          photoGallery.length > 0
-                            ? 'bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white shadow-emerald-500/30 ring-2 ring-emerald-400/40'
-                            : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
+                          photoGallery.length > 0 || Object.keys(enrolledFingers).length > 0 || irisEnrolled
+                            ? 'bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white shadow-emerald-500/30 ring-2 ring-emerald-400/40 cursor-pointer'
+                            : 'bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-700'
                         }`}
                       >
                         {isIssuingPass ? (
@@ -1074,15 +1102,44 @@ export default function WalkInRegistrationModal({ isOpen = true, onClose, onComp
               {/* VIEW 2: OPTIONAL FINGERPRINT SCANNER */}
               {activeBiometricView === 'FINGERPRINT' && (
                 <div className="p-6 bg-slate-950 border border-slate-800 rounded-2xl text-center space-y-5 animate-fadeIn">
-                  <div className="w-24 h-24 mx-auto rounded-3xl border-2 border-purple-400/80 bg-purple-500/10 flex items-center justify-center shadow-[0_0_25px_rgba(168,85,247,0.3)]">
-                    <Fingerprint className="w-14 h-14 text-purple-400 animate-pulse" />
+                  <div className="w-28 h-28 mx-auto rounded-3xl border-2 border-purple-400/80 bg-purple-500/10 flex items-center justify-center shadow-[0_0_25px_rgba(168,85,247,0.3)] overflow-hidden relative">
+                    {enrolledFingers[selectedFingerDropdown]?.bitmapBase64 ? (
+                      <img 
+                        src={enrolledFingers[selectedFingerDropdown].bitmapBase64} 
+                        alt="Enrolled 500 DPI Fingerprint" 
+                        className="w-full h-full object-contain filter contrast-125 rounded-2xl"
+                      />
+                    ) : (
+                      <Fingerprint className={`w-14 h-14 text-purple-400 ${isFingerScanning ? 'animate-pulse scale-110 text-cyan-300' : ''}`} />
+                    )}
+                    {enrolledFingers[selectedFingerDropdown] && (
+                      <span className="absolute bottom-1 bg-emerald-500 text-slate-950 font-black text-[9px] px-2 py-0.5 rounded-full shadow">
+                        ✓ {selectedFingerDropdown} ENROLLED ({enrolledFingers[selectedFingerDropdown].nfiqScore}%)
+                      </span>
+                    )}
                   </div>
                   <div>
-                    <h4 className="font-bold text-white text-sm">Optional: 500 DPI Optical Fingerprint Enrollment</h4>
+                    <h4 className="font-bold text-white text-sm">500 DPI Optical Fingerprint Enrollment (1 to 5+ Fingers)</h4>
                     <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1">
-                      Link optical minutiae template with Person ID <strong className="text-purple-400">{registeredPerson.person_id}</strong> (Optional / Can skip).
+                      Enroll Thumb, Index, Middle or multiple fingers for <strong className="text-purple-400">{registeredPerson.name}</strong> ({registeredPerson.person_id}).
                     </p>
                   </div>
+
+                  {/* Enrolled Fingers Badges List */}
+                  {Object.keys(enrolledFingers).length > 0 && (
+                    <div className="flex flex-wrap items-center justify-center gap-2 p-3 bg-slate-900/80 rounded-xl border border-slate-800">
+                      <span className="text-[11px] font-bold text-slate-400 mr-1">Enrolled Fingers ({Object.keys(enrolledFingers).length}):</span>
+                      {Object.entries(enrolledFingers).map(([fCode, fData]) => (
+                        <span 
+                          key={fCode}
+                          className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold flex items-center gap-1.5"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>{fCode} ({fData.nfiqScore}%)</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
 
                   <div className="flex flex-wrap justify-center gap-3">
                     <select
@@ -1090,20 +1147,30 @@ export default function WalkInRegistrationModal({ isOpen = true, onClose, onComp
                       onChange={(e) => setSelectedFingerDropdown(e.target.value)}
                       className="bg-slate-900 border border-slate-700 text-xs text-slate-200 px-3 py-2 rounded-xl focus:outline-none"
                     >
-                      <option value="R_INDEX">Right Index (RI)</option>
-                      <option value="R_THUMB">Right Thumb (RT)</option>
-                      <option value="L_INDEX">Left Index (LI)</option>
-                      <option value="L_THUMB">Left Thumb (LT)</option>
+                      <option value="LT">Left Thumb (LT)</option>
+                      <option value="LI">Left Index (LI)</option>
+                      <option value="LM">Left Middle (LM)</option>
+                      <option value="LR">Left Ring (LR)</option>
+                      <option value="LL">Left Little (LL)</option>
+                      <option value="RT">Right Thumb (RT)</option>
+                      <option value="RI">Right Index (RI)</option>
+                      <option value="RM">Right Middle (RM)</option>
+                      <option value="RR">Right Ring (RR)</option>
+                      <option value="RL">Right Little (RL)</option>
                     </select>
 
                     <button
                       type="button"
                       onClick={() => handleTriggerFingerprintScan(selectedFingerDropdown)}
                       disabled={isFingerScanning}
-                      className="px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-lg shadow-purple-600/30 transition-all"
+                      className="px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-lg shadow-purple-600/30 transition-all cursor-pointer"
                     >
                       <Fingerprint className="w-4 h-4" />
-                      {isFingerScanning ? 'Scanning Prism...' : Object.keys(enrolledFingers).length > 0 ? '✓ Fingerprint Enrolled' : 'Scan Finger Now'}
+                      {isFingerScanning 
+                        ? 'Scanning Prism...' 
+                        : enrolledFingers[selectedFingerDropdown] 
+                        ? `Re-Scan ${selectedFingerDropdown}` 
+                        : `Scan ${selectedFingerDropdown} Now`}
                     </button>
                   </div>
 
@@ -1112,7 +1179,7 @@ export default function WalkInRegistrationModal({ isOpen = true, onClose, onComp
                     <button
                       type="button"
                       onClick={() => setActiveBiometricView('FACE')}
-                      className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-semibold flex items-center gap-2 border border-slate-700"
+                      className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-semibold flex items-center gap-2 border border-slate-700 cursor-pointer"
                     >
                       <Camera className="w-4 h-4 text-sky-400" />
                       <span>← Back to Face View</span>
@@ -1121,8 +1188,12 @@ export default function WalkInRegistrationModal({ isOpen = true, onClose, onComp
                     <button
                       type="button"
                       onClick={handleIssueGatePass}
-                      disabled={isIssuingPass || photoGallery.length === 0}
-                      className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white text-xs font-black flex items-center gap-2 shadow-lg shadow-emerald-500/25"
+                      disabled={isIssuingPass || (photoGallery.length === 0 && Object.keys(enrolledFingers).length === 0 && !irisEnrolled)}
+                      className={`px-6 py-2.5 rounded-xl text-white text-xs font-black flex items-center gap-2 shadow-lg transition-all ${
+                        photoGallery.length > 0 || Object.keys(enrolledFingers).length > 0 || irisEnrolled
+                          ? 'bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 shadow-emerald-500/25 cursor-pointer'
+                          : 'bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-700'
+                      }`}
                     >
                       <ShieldCheck className="w-4 h-4" />
                       <span>Generate Gate Pass</span>
@@ -1150,7 +1221,7 @@ export default function WalkInRegistrationModal({ isOpen = true, onClose, onComp
                       type="button"
                       onClick={handleTriggerIrisScan}
                       disabled={isIrisScanning}
-                      className="px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-lg shadow-cyan-600/30 transition-all"
+                      className="px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-lg shadow-cyan-600/30 transition-all cursor-pointer"
                     >
                       <Eye className="w-4 h-4" />
                       {isIrisScanning ? 'Scanning Iris...' : irisEnrolled ? '✓ Iris Enrolled' : 'Scan Iris Now'}
@@ -1162,7 +1233,7 @@ export default function WalkInRegistrationModal({ isOpen = true, onClose, onComp
                     <button
                       type="button"
                       onClick={() => setActiveBiometricView('FACE')}
-                      className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-semibold flex items-center gap-2 border border-slate-700"
+                      className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-semibold flex items-center gap-2 border border-slate-700 cursor-pointer"
                     >
                       <Camera className="w-4 h-4 text-sky-400" />
                       <span>← Back to Face View</span>
@@ -1171,8 +1242,12 @@ export default function WalkInRegistrationModal({ isOpen = true, onClose, onComp
                     <button
                       type="button"
                       onClick={handleIssueGatePass}
-                      disabled={isIssuingPass || photoGallery.length === 0}
-                      className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white text-xs font-black flex items-center gap-2 shadow-lg shadow-emerald-500/25"
+                      disabled={isIssuingPass || (photoGallery.length === 0 && Object.keys(enrolledFingers).length === 0 && !irisEnrolled)}
+                      className={`px-6 py-2.5 rounded-xl text-white text-xs font-black flex items-center gap-2 shadow-lg transition-all ${
+                        photoGallery.length > 0 || Object.keys(enrolledFingers).length > 0 || irisEnrolled
+                          ? 'bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 shadow-emerald-500/25 cursor-pointer'
+                          : 'bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-700'
+                      }`}
                     >
                       <ShieldCheck className="w-4 h-4" />
                       <span>Generate Gate Pass</span>

@@ -37,7 +37,7 @@ def seed():
             "id_proof_type": "Aadhaar Card",
             "id_proof_number": "XXXX-XXXX-4819",
             "declared_laptop_serial": "DELL-LAT-7420-SN9912",
-            "photo": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+            "photo": "",
             "allowed_departments": ["RND", "IT_INFRA"],
             "status": "ACTIVE",
             "compliance_status": "COMPLIANT"
@@ -53,7 +53,7 @@ def seed():
             "id_proof_type": "Passport",
             "id_proof_number": "Z8924102",
             "declared_laptop_serial": "MBP-M3-MAX-CYBER01",
-            "photo": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&auto=format&fit=crop&q=80",
+            "photo": "",
             "allowed_departments": ["IT_INFRA", "SEC_OPS"],
             "status": "ACTIVE",
             "compliance_status": "COMPLIANT"
@@ -69,7 +69,7 @@ def seed():
             "id_proof_type": "Driving License",
             "id_proof_number": "DL-0420190038",
             "declared_laptop_serial": "LENOVO-T14-GEN4",
-            "photo": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80",
+            "photo": "",
             "allowed_departments": ["RND", "LOGISTICS"],
             "status": "ACTIVE",
             "compliance_status": "COMPLIANT"
@@ -85,7 +85,7 @@ def seed():
             "id_proof_type": "Aadhaar Card",
             "id_proof_number": "XXXX-XXXX-9102",
             "declared_laptop_serial": "HP-ELITEBOOK-840",
-            "photo": "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=300&auto=format&fit=crop&q=80",
+            "photo": "",
             "allowed_departments": ["HR_TALENT", "LEGAL_EXEC"],
             "status": "ACTIVE",
             "compliance_status": "COMPLIANT"
@@ -101,7 +101,7 @@ def seed():
             "id_proof_type": "Voter ID",
             "id_proof_number": "EPIC-882910",
             "declared_laptop_serial": "NONE",
-            "photo": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80",
+            "photo": "",
             "allowed_departments": [],
             "status": "BLACKLISTED",
             "compliance_status": "RESTRICTED"
@@ -117,7 +117,7 @@ def seed():
             "id_proof_type": "PAN Card",
             "id_proof_number": "ABCDE1234F",
             "declared_laptop_serial": "THINKPAD-X1-CARBON",
-            "photo": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&auto=format&fit=crop&q=80",
+            "photo": "",
             "allowed_departments": ["LEGAL_EXEC", "HR_TALENT"],
             "status": "ACTIVE",
             "compliance_status": "COMPLIANT"

@@ -46,7 +46,7 @@ export default function HostApprovals({ setActivePage }) {
 
   return (
     <div className="space-y-6 pb-12">
-      <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-sm transition-colors duration-150 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <CheckSquare className="w-5 h-5 text-amber-400" />
@@ -82,7 +82,7 @@ export default function HostApprovals({ setActivePage }) {
         </div>
 
         {pendingVisits.length === 0 ? (
-          <div className="bg-slate-900 border border-slate-800 p-8 rounded-2xl text-center text-slate-500 text-xs space-y-2">
+          <div className="bg-slate-900 border border-slate-800 p-8 rounded-2xl text-center text-slate-400 text-xs space-y-2">
             <CheckCircle2 className="w-8 h-8 text-emerald-500/50 mx-auto" />
             <span className="font-semibold block text-slate-400">All caught up!</span>
             <span>No pending visitor requests awaiting approval.</span>
@@ -92,7 +92,7 @@ export default function HostApprovals({ setActivePage }) {
             {pendingVisits.map(visit => (
               <div 
                 key={visit.id} 
-                className="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-sm space-y-4 hover:border-sky-500/40 transition-all"
+                className="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-sm transition-colors duration-150 shadow-sm space-y-4 hover:border-sky-500/40 transition-all"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
@@ -104,7 +104,7 @@ export default function HostApprovals({ setActivePage }) {
                     <div>
                       <span className="font-bold text-white text-sm block">{visit.visitorName}</span>
                       <span className="text-xs text-slate-400 font-medium">{visit.visitorCompany}</span>
-                      <span className="text-[10px] text-slate-500 font-mono">{visit.visitorPhone}</span>
+                      <span className="text-[10px] text-slate-400 font-mono">{visit.visitorPhone}</span>
                     </div>
                   </div>
                   <span className="px-2 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] font-bold rounded-full uppercase">
@@ -252,7 +252,7 @@ export default function HostApprovals({ setActivePage }) {
                   >
                     <div>
                       <span className="font-bold block">{z.name} ({z.code})</span>
-                      <span className="text-[10px] text-slate-500">{z.securityLevel}</span>
+                      <span className="text-[10px] text-slate-400">{z.securityLevel}</span>
                     </div>
                     <input
                       type="checkbox"

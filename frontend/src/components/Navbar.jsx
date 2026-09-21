@@ -9,15 +9,13 @@ import {
   RotateCcw, 
   Radio, 
   Sliders,
-  LogOut,
-  Home,
   Bell,
-  Sparkles
+  Sparkles,
+  Menu
 } from 'lucide-react';
-import ProposalStagesModal from './ProposalStagesModal';
 import NotificationsDrawer from './NotificationsDrawer';
 
-export default function Navbar({ activePage, setActivePage }) {
+export default function Navbar({ activePage, setActivePage, onOpenStages, onToggleSidebar }) {
   const { 
     currentUserRole, 
     setCurrentUserRole, 
@@ -25,14 +23,11 @@ export default function Navbar({ activePage, setActivePage }) {
     setCurrentGate, 
     activeAlerts,
     resetToDemoData,
-    visits,
-    currentUser,
-    logout,
+    visits, 
     auditLogs
   } = useVms();
 
   const [time, setTime] = useState(new Date());
-  const [stagesModalOpen, setStagesModalOpen] = useState(false);
   const [notifDrawerOpen, setNotifDrawerOpen] = useState(false);
 
   useEffect(() => {
@@ -44,49 +39,50 @@ export default function Navbar({ activePage, setActivePage }) {
   const criticalAlertsCount = activeAlerts.length + auditLogs.filter(l => l.severity === 'CRITICAL').length;
 
   return (
-    <header className="bg-slate-900 border-b border-slate-800 text-slate-100 sticky top-0 z-40 px-4 py-2.5 flex items-center justify-between no-print">
-      {/* Left: Brand / System Title */}
-      <div className="flex items-center gap-3">
+    <header className="bg-slate-900 border-b border-slate-800 text-slate-100 sticky top-0 z-40 px-3 sm:px-4 py-2 flex items-center justify-between no-print shrink-0 shadow-sm transition-colors duration-150">
+      {/* Left: Hamburger (Mobile) + Brand / System Title */}
+      <div className="flex items-center gap-2 sm:gap-3">
+        {/* Mobile Hamburger Toggle Button */}
+        <button
+          onClick={onToggleSidebar}
+          title="Toggle Navigation Menu"
+          className="md:hidden p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800 transition-colors cursor-pointer"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+
         <button 
           onClick={() => setActivePage('landing')}
           title="Go to Landing Page"
-          className="h-10 w-10 rounded-xl bg-gradient-to-tr from-sky-600 to-cyan-400 flex items-center justify-center shadow-lg shadow-sky-500/20 ring-1 ring-sky-400/30 hover:opacity-90 transition-opacity"
+          className="h-9 w-9 rounded-xl bg-gradient-to-tr from-sky-600 to-cyan-400 flex items-center justify-center shadow-lg shadow-sky-500/20 ring-1 ring-sky-400/30 hover:opacity-90 transition-opacity cursor-pointer"
         >
           <Shield className="w-5 h-5 text-white" />
         </button>
         <div>
           <div className="flex items-center gap-2">
-            <span className="font-bold tracking-tight text-white text-base">ILIZIEN VMS</span>
-            <span className="text-[10px] uppercase font-semibold px-2 py-0.5 bg-sky-500/10 text-sky-400 border border-sky-500/20 rounded-full">
+            <span className="font-extrabold tracking-tight text-white text-sm sm:text-base">ILIZIEN VMS</span>
+            <span className="text-[10px] uppercase font-bold px-2 py-0.5 bg-sky-500/10 text-sky-400 border border-sky-500/20 rounded-full">
               Biometric Suite 2.0
             </span>
           </div>
-          <p className="text-xs text-slate-400 flex items-center gap-1.5">
+          <p className="text-[11px] text-slate-400 hidden sm:flex items-center gap-1.5">
             <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             Multi-Modal Identity & Gate Pass System
           </p>
         </div>
       </div>
 
-      {/* Center: Live Station Status, Clock & 10-Stages Button */}
-      <div className="hidden md:flex items-center gap-4">
+      {/* Center: Live Station Status & Clock (Uncluttered & Clean) */}
+      <div className="hidden md:flex items-center gap-3">
         
-        {/* Proposal 10-Stages Compliance Button */}
-        <button
-          onClick={() => setStagesModalOpen(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-sky-600/20 to-cyan-500/20 hover:from-sky-600/30 hover:to-cyan-500/30 text-sky-300 border border-sky-500/40 rounded-xl text-xs font-bold transition-all shadow-sm"
-        >
-          <Sparkles className="w-3.5 h-3.5 text-sky-400 animate-pulse" />
-          <span>10 Stages Proposal Compliance</span>
-        </button>
-
-        <div className="flex items-center gap-2 text-xs bg-slate-950/60 px-3 py-1.5 rounded-lg border border-slate-800">
-          <Radio className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-          <span className="text-slate-400 font-medium">Gate:</span>
+        {/* Gate Selector */}
+        <div className="flex items-center gap-2 text-xs bg-slate-950/70 px-3 py-1.5 rounded-xl border border-slate-800 shadow-inner">
+          <Radio className="w-3.5 h-3.5 text-emerald-500 animate-pulse" />
+          <span className="text-slate-400 font-medium">Station:</span>
           <select 
             value={currentGate}
             onChange={(e) => setCurrentGate(e.target.value)}
-            className="bg-transparent font-semibold text-sky-400 focus:outline-none cursor-pointer text-xs"
+            className="bg-transparent font-bold text-sky-400 focus:outline-none cursor-pointer text-xs"
           >
             <option value="Main Gate 01" className="bg-slate-900 text-white">Main Gate 01</option>
             <option value="North Gate 02" className="bg-slate-900 text-white">North Gate 02</option>
@@ -94,21 +90,22 @@ export default function Navbar({ activePage, setActivePage }) {
           </select>
         </div>
 
-        <div className="flex items-center gap-2 text-xs bg-slate-950/60 px-3 py-1.5 rounded-lg border border-slate-800">
+        {/* Live Clock */}
+        <div className="flex items-center gap-2 text-xs bg-slate-950/70 px-3 py-1.5 rounded-xl border border-slate-800 shadow-inner">
           <Clock className="w-3.5 h-3.5 text-sky-400" />
-          <span className="font-mono text-slate-200 text-xs">
+          <span className="font-mono text-slate-200 text-xs font-semibold">
             {time.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
           </span>
         </div>
       </div>
 
-      {/* Right: User Profile, Notifications, Role Switcher & System Actions */}
-      <div className="flex items-center gap-2">
+      {/* Right: Role Switcher, Theme Toggle, 10-Stages Quick Icon, Notifications & System Actions */}
+      <div className="flex items-center gap-1.5 sm:gap-2">
         
         {/* Role Switcher Pill */}
-        <div className="hidden lg:flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+        <div className="hidden lg:flex items-center gap-1 bg-slate-950/90 p-1 rounded-xl border border-slate-800">
           <span className="text-[10px] font-medium text-slate-400 px-1.5 flex items-center gap-1">
-            <Sliders className="w-3 h-3 text-slate-400" /> Switch:
+            <Sliders className="w-3 h-3 text-slate-400" /> Role:
           </span>
           {[
             { id: 'guard', label: 'Guard', icon: Shield },
@@ -128,7 +125,7 @@ export default function Navbar({ activePage, setActivePage }) {
                   else if (r.id === 'host') setActivePage('host-approvals');
                   else if (r.id === 'visitor') setActivePage('pre-register');
                 }}
-                className={'flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold transition-all relative ' + 
+                className={'flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all relative ' + 
                   (isActive 
                     ? 'bg-sky-600 text-white shadow-md shadow-sky-600/30' 
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60')}
@@ -136,7 +133,7 @@ export default function Navbar({ activePage, setActivePage }) {
                 <Icon className="w-3.5 h-3.5" />
                 <span>{r.label}</span>
                 {r.badge > 0 && (
-                  <span className="w-3.5 h-3.5 text-[9px] bg-amber-500 text-slate-950 font-bold rounded-full flex items-center justify-center">
+                  <span className="w-3.5 h-3.5 text-[9px] bg-amber-500 text-slate-950 font-black rounded-full flex items-center justify-center">
                     {r.badge}
                   </span>
                 )}
@@ -145,11 +142,20 @@ export default function Navbar({ activePage, setActivePage }) {
           })}
         </div>
 
+        {/* 10 Stages Quick Icon Button */}
+        <button
+          onClick={onOpenStages}
+          title="10 Stages Proposal Compliance Directory"
+          className="p-2 text-sky-400 hover:text-white bg-slate-950 hover:bg-sky-950/60 rounded-xl border border-slate-800 hover:border-sky-500/40 transition-all cursor-pointer shadow-sm group"
+        >
+          <Sparkles className="w-4 h-4 group-hover:rotate-12 transition-transform" />
+        </button>
+
         {/* Notifications Bell Icon */}
         <button
           onClick={() => setNotifDrawerOpen(true)}
           title="View Security Alerts & Notifications"
-          className="p-2 text-slate-400 hover:text-white bg-slate-950 hover:bg-slate-800 rounded-lg border border-slate-800 transition-colors relative"
+          className="p-2 text-slate-400 hover:text-white bg-slate-950 hover:bg-slate-800 rounded-xl border border-slate-800 transition-colors relative cursor-pointer shadow-sm"
         >
           <Bell className="w-4 h-4" />
           {criticalAlertsCount > 0 && (
@@ -157,15 +163,6 @@ export default function Navbar({ activePage, setActivePage }) {
               {criticalAlertsCount}
             </span>
           )}
-        </button>
-
-        {/* Home / Landing button */}
-        <button
-          onClick={() => setActivePage('landing')}
-          title="Visit Public Landing Page"
-          className="p-2 text-slate-400 hover:text-white bg-slate-950 hover:bg-slate-800 rounded-lg border border-slate-800 transition-colors flex items-center gap-1 text-xs"
-        >
-          <Home className="w-4 h-4" />
         </button>
 
         {/* Reset Demo Data Button */}
@@ -176,40 +173,14 @@ export default function Navbar({ activePage, setActivePage }) {
             }
           }}
           title="Reset Demo Data"
-          className="p-2 text-slate-400 hover:text-white bg-slate-950 hover:bg-slate-800 rounded-lg border border-slate-800 transition-colors"
+          className="p-2 text-slate-400 hover:text-white bg-slate-950 hover:bg-slate-800 rounded-xl border border-slate-800 transition-colors cursor-pointer shadow-sm"
         >
           <RotateCcw className="w-4 h-4" />
         </button>
 
-        {/* Current User Chip & Logout */}
-        <div className="flex items-center gap-2 bg-slate-950 pl-2 pr-1 py-1 rounded-xl border border-slate-800">
-          <div className="text-right hidden sm:block">
-            <span className="text-xs font-bold text-white block leading-tight">{currentUser?.name || 'Authorized Staff'}</span>
-            <span className="text-[10px] text-sky-400 font-mono uppercase">{currentUserRole}</span>
-          </div>
-
-          <button
-            onClick={() => {
-              logout();
-              setActivePage('login');
-            }}
-            title="Sign Out"
-            className="p-1.5 text-rose-400 hover:text-white hover:bg-rose-600/30 rounded-lg transition-colors"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
-        </div>
-
       </div>
 
-      {/* 10-Stages Proposal Compliance Modal */}
-      <ProposalStagesModal 
-        isOpen={stagesModalOpen}
-        onClose={() => setStagesModalOpen(false)}
-        onNavigate={(route) => setActivePage(route)}
-      />
-
-      {/* Real-Time Security Notifications Drawer (Section 9) */}
+      {/* Real-Time Security Notifications Drawer */}
       <NotificationsDrawer 
         isOpen={notifDrawerOpen}
         onClose={() => setNotifDrawerOpen(false)}
@@ -217,3 +188,4 @@ export default function Navbar({ activePage, setActivePage }) {
     </header>
   );
 }
+

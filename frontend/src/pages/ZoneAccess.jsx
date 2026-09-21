@@ -152,7 +152,7 @@ export default function ZoneAccess() {
             </div>
 
             {activeInsideVisits.length === 0 ? (
-              <div className="p-10 text-center bg-slate-950 rounded-2xl border border-slate-800 text-slate-500 text-xs">
+              <div className="p-10 text-center bg-slate-950 rounded-2xl border border-slate-800 text-slate-400 text-xs">
                 No visitors currently checked-in inside premises. Check-in a visitor from Guard Kiosk to track location.
               </div>
             ) : (
@@ -182,7 +182,7 @@ export default function ZoneAccess() {
                             <span className="font-mono text-[10px] text-sky-400 font-bold">{visit.passNumber}</span>
                           </div>
                           <span className="text-xs text-slate-400 block truncate">{visit.visitorCompany}</span>
-                          <span className="text-[10px] text-slate-500 block">Host: {visit.hostName} ({visit.hostDept})</span>
+                          <span className="text-[10px] text-slate-400 block">Host: {visit.hostName} ({visit.hostDept})</span>
                         </div>
                       </div>
 
@@ -203,7 +203,7 @@ export default function ZoneAccess() {
                       {/* Allowed Zones & Time */}
                       <div className="flex items-center justify-between text-[11px] pt-1 border-t border-slate-900">
                         <div className="flex items-center gap-1">
-                          <span className="text-slate-500">Allowed:</span>
+                          <span className="text-slate-400">Allowed:</span>
                           {(visit.allowedZones || ['ZONE-01', 'ZONE-02']).map(z => (
                             <span key={z} className="px-1.5 py-0.2 bg-slate-800 text-sky-400 rounded text-[9px] font-mono font-bold">
                               {z}
@@ -307,7 +307,7 @@ export default function ZoneAccess() {
             </div>
 
             {activeAlerts.length === 0 ? (
-              <div className="p-8 text-center bg-slate-950/60 rounded-2xl border border-slate-800 text-slate-500 text-xs space-y-2">
+              <div className="p-8 text-center bg-slate-950/60 rounded-2xl border border-slate-800 text-slate-400 text-xs space-y-2">
                 <CheckCircle2 className="w-8 h-8 text-emerald-500/40 mx-auto" />
                 <span>No unauthorized zone entries detected. All visitors in permitted areas.</span>
               </div>
@@ -324,7 +324,7 @@ export default function ZoneAccess() {
                     <div className="text-slate-300 text-[11px]">
                       Unauthorized Access into: <strong className="text-rose-300">{alert.zoneName} ({alert.zoneCode})</strong>
                     </div>
-                    <div className="text-[10px] text-slate-500">Security Gate: {alert.gate}</div>
+                    <div className="text-[10px] text-slate-400">Security Gate: {alert.gate}</div>
                   </div>
                 ))}
               </div>
@@ -365,7 +365,7 @@ export default function ZoneAccess() {
                               ALLOWED
                             </span>
                           ) : (
-                            <span className="inline-block px-2.5 py-0.5 bg-slate-800 text-slate-500 font-bold text-[10px] rounded-full">
+                            <span className="inline-block px-2.5 py-0.5 bg-slate-800 text-slate-400 font-bold text-[10px] rounded-full">
                               RESTRICTED
                             </span>
                           )}
@@ -415,7 +415,7 @@ export default function ZoneAccess() {
               <tbody className="divide-y divide-slate-800/60 font-mono">
                 {zoneMovementLogs.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="p-6 text-center text-slate-500 font-sans">
+                    <td colSpan={5} className="p-6 text-center text-slate-400 font-sans">
                       No zone movement records found. Use the Turnstile Simulator to simulate door taps.
                     </td>
                   </tr>

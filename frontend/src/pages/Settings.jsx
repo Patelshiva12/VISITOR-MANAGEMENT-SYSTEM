@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 
 export default function Settings() {
-  const { currentGate, resetToDemoData, logAudit } = useVms();
+  const { currentGate, resetToDemoData, clearAllVisitorData, logAudit } = useVms();
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   const [settings, setSettings] = useState({
@@ -45,27 +45,27 @@ export default function Settings() {
     <div className="max-w-4xl mx-auto space-y-6 pb-12">
       
       {/* Header */}
-      <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl flex items-center justify-between">
+      <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl flex items-center justify-between shadow-sm">
         <div>
           <div className="flex items-center gap-2">
             <Sliders className="w-5 h-5 text-sky-400" />
             <h1 className="text-lg font-black text-white">System Configuration & Biometric Calibration</h1>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Configure biometric hardware thresholds, anti-spoofing sensitivity, and data retention policies (Section 13).
+            Configure biometric hardware thresholds, anti-spoofing sensitivity, and data retention policies.
           </p>
         </div>
 
         <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-mono font-bold rounded-full flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
           Engine v2.4 Active
         </span>
       </div>
 
       <form onSubmit={handleSave} className="space-y-6">
         
-        {/* Section 1: Biometric Calibration (Section 5) */}
-        <div className="bg-slate-900 border border-slate-800 p-6 sm:p-8 rounded-3xl space-y-5">
+        {/* Section 1: Biometric Calibration */}
+        <div className="bg-slate-900 border border-slate-800 p-6 sm:p-8 rounded-3xl space-y-5 shadow-sm">
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 border-b border-slate-800 pb-3">
             <Camera className="w-4 h-4 text-sky-400" /> 1. Facial Recognition & Liveness Calibration (ArcFace + SCRFD)
           </h3>
@@ -83,9 +83,9 @@ export default function Settings() {
                 max="98"
                 value={settings.faceThreshold}
                 onChange={(e) => setSettings({ ...settings, faceThreshold: Number(e.target.value) })}
-                className="w-full accent-sky-500 bg-slate-950 h-2 rounded-lg cursor-pointer"
+                className="w-full accent-sky-500 bg-slate-800 bg-slate-950 h-2 rounded-lg cursor-pointer"
               />
-              <span className="text-[10px] text-slate-500 mt-1 block">Higher threshold reduces False Acceptance Rate (FAR).</span>
+              <span className="text-[10px] text-slate-400 mt-1 block">Higher threshold reduces False Acceptance Rate (FAR).</span>
             </div>
 
             {/* Liveness Mode */}
@@ -129,10 +129,10 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* Section 2: Security & Data Protection Policy (Section 13) */}
-        <div className="bg-slate-900 border border-slate-800 p-6 sm:p-8 rounded-3xl space-y-5">
+        {/* Section 2: Security & Data Protection Policy */}
+        <div className="bg-slate-900 border border-slate-800 p-6 sm:p-8 rounded-3xl space-y-5 shadow-sm">
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 border-b border-slate-800 pb-3">
-            <Archive className="w-4 h-4 text-purple-400" /> 2. Data Protection, Retention & Archival Policy (Section 13.5)
+            <Archive className="w-4 h-4 text-purple-600" /> 3. Data Protection, Retention & Archival Policy (Section 13.5)
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -189,19 +189,34 @@ export default function Settings() {
         </div>
 
         {/* Action Bar */}
-        <div className="flex items-center justify-between pt-2">
-          <button
-            type="button"
-            onClick={() => {
-              if (confirm('Reset system data to initial demonstration state?')) {
-                resetToDemoData();
-                alert('System restored to default baseline.');
-              }
-            }}
-            className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white text-xs font-bold rounded-xl border border-slate-800 flex items-center gap-2 transition-colors"
-          >
-            <RotateCcw className="w-4 h-4" /> Reset Demo Baseline Data
-          </button>
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                if (confirm('Reset system data to initial demonstration state?')) {
+                  resetToDemoData();
+                  alert('System restored to default baseline.');
+                }
+              }}
+              className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 bg-slate-900 text-slate-300 text-slate-400 hover:text-white text-xs font-bold rounded-xl border border-slate-800 flex items-center gap-2 transition-colors cursor-pointer"
+            >
+              <RotateCcw className="w-4 h-4" /> Reset Demo Baseline Data
+            </button>
+
+            <button
+              type="button"
+              onClick={async () => {
+                if (confirm('⚠️ ARE YOU SURE? This will permanently wipe ALL registered visitors, biometric templates (Face + Fingerprint), and gate visits so you can start with 100% fresh real data.')) {
+                  await clearAllVisitorData();
+                  alert('✓ All visitor and biometric data permanently deleted from SQLite database vault.');
+                }
+              }}
+              className="px-4 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 hover:text-rose-900 text-xs font-bold rounded-xl border border-rose-200 hover:border-rose-400 flex items-center gap-2 transition-colors cursor-pointer"
+            >
+              <span>🗑️ Wipe All Biometrics & Visitors (Clean Slate)</span>
+            </button>
+          </div>
 
           <div className="flex items-center gap-3">
             {savedSuccess && (
@@ -211,7 +226,7 @@ export default function Settings() {
             )}
             <button
               type="submit"
-              className="px-6 py-2.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-sky-600/30 flex items-center gap-2 transition-all"
+              className="px-6 py-2.5 bg-sky-600 hover:bg-sky-950/600 text-white text-xs font-bold rounded-xl shadow-lg shadow-sky-600/30 flex items-center gap-2 transition-all cursor-pointer"
             >
               <Save className="w-4 h-4" /> Save Configuration
             </button>

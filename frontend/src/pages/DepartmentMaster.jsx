@@ -313,12 +313,12 @@ export default function DepartmentMaster({ setActivePage }) {
               </div>
 
               {visitors.length === 0 ? (
-                <div className="p-6 text-center text-slate-500 space-y-3">
-                  <Users className="w-10 h-10 mx-auto text-slate-600 opacity-60" />
+                <div className="p-6 text-center text-slate-400 space-y-3">
+                  <Users className="w-10 h-10 mx-auto text-slate-400 opacity-60" />
                   <p className="text-xs">No registered visitors found in database.</p>
                   <button
                     onClick={() => setActivePage('guard')}
-                    className="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-xl shadow transition-all cursor-pointer"
+                    className="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-950/600 text-white text-xs font-bold rounded-xl shadow transition-all cursor-pointer"
                   >
                     Go to Guard Terminal to Register
                   </button>
@@ -348,11 +348,17 @@ export default function DepartmentMaster({ setActivePage }) {
                     >
                       {activeVisitor ? (
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <img
-                            src={activeVisitor.photoUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
-                            alt={activeVisitor.fullName}
-                            className="w-8 h-8 rounded-xl object-cover border border-slate-700 shrink-0"
-                          />
+                          {activeVisitor.photoUrl ? (
+                            <img
+                              src={activeVisitor.photoUrl}
+                              alt={activeVisitor.fullName}
+                              className="w-8 h-8 rounded-xl object-cover border border-slate-700 shrink-0"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 shrink-0">
+                              <Users className="w-4 h-4" />
+                            </div>
+                          )}
                           <div className="truncate">
                             <div className="flex items-center gap-1.5">
                               <span className="font-bold text-white text-xs truncate">
@@ -439,11 +445,17 @@ export default function DepartmentMaster({ setActivePage }) {
                                   }`}
                                 >
                                   <div className="flex items-center gap-2.5 min-w-0">
-                                    <img
-                                      src={v.photoUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
-                                      alt={v.fullName}
-                                      className="w-7 h-7 rounded-lg object-cover border border-slate-700 shrink-0"
-                                    />
+                                    {v.photoUrl ? (
+                                      <img
+                                        src={v.photoUrl}
+                                        alt={v.fullName}
+                                        className="w-7 h-7 rounded-lg object-cover border border-slate-700 shrink-0"
+                                      />
+                                    ) : (
+                                      <div className="w-7 h-7 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 shrink-0">
+                                        <Users className="w-3.5 h-3.5" />
+                                      </div>
+                                    )}
                                     <div className="truncate">
                                       <div className="flex items-center gap-1.5">
                                         <span className="font-bold text-xs truncate text-white block">
@@ -463,7 +475,7 @@ export default function DepartmentMaster({ setActivePage }) {
                                     <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-bold ${
                                       deptCount > 0 
                                         ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                                        : 'bg-slate-800 text-slate-500'
+                                        : 'bg-slate-800 text-slate-400'
                                     }`}>
                                       {deptCount} Depts
                                     </span>
@@ -484,25 +496,31 @@ export default function DepartmentMaster({ setActivePage }) {
                   {activeVisitor && (
                     <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 space-y-3 mt-3">
                       <div className="flex items-center gap-3">
-                        <img 
-                          src={activeVisitor.photoUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'} 
-                          alt={activeVisitor.fullName} 
-                          className="w-14 h-14 rounded-2xl object-cover border border-slate-700 shrink-0"
-                        />
+                        {activeVisitor.photoUrl ? (
+                          <img 
+                            src={activeVisitor.photoUrl} 
+                            alt={activeVisitor.fullName} 
+                            className="w-14 h-14 rounded-2xl object-cover border border-slate-700 shrink-0"
+                          />
+                        ) : (
+                          <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 shrink-0">
+                            <Users className="w-7 h-7" />
+                          </div>
+                        )}
                         <div className="truncate">
                           <h4 className="font-extrabold text-white text-sm truncate">{activeVisitor.fullName}</h4>
                           <span className="text-xs text-sky-400 font-semibold block truncate">{activeVisitor.company}</span>
-                          <span className="text-[10px] text-slate-500 font-mono block">{activeVisitor.phone}</span>
+                          <span className="text-[10px] text-slate-400 font-mono block">{activeVisitor.phone}</span>
                         </div>
                       </div>
 
                       <div className="pt-2 border-t border-slate-800 grid grid-cols-2 gap-2 text-[11px]">
                         <div>
-                          <span className="text-slate-500 block">Person ID:</span>
+                          <span className="text-slate-400 block">Person ID:</span>
                           <span className="font-mono font-bold text-slate-200">{activeVisitor.id}</span>
                         </div>
                         <div>
-                          <span className="text-slate-500 block">Compliance:</span>
+                          <span className="text-slate-400 block">Compliance:</span>
                           <span className="font-bold text-emerald-400 flex items-center gap-1">
                             <CheckCircle2 className="w-3 h-3" /> {activeVisitor.complianceStatus || 'COMPLIANT'}
                           </span>
@@ -510,7 +528,7 @@ export default function DepartmentMaster({ setActivePage }) {
                       </div>
 
                       <div>
-                        <span className="text-slate-500 text-[10px] block mb-1">Current Authorized Departments:</span>
+                        <span className="text-slate-400 text-[10px] block mb-1">Current Authorized Departments:</span>
                         <div className="flex flex-wrap gap-1">
                           {(activeVisitor.allowedDepartments && activeVisitor.allowedDepartments.length > 0) ? (
                             activeVisitor.allowedDepartments.map(code => (
@@ -758,18 +776,18 @@ export default function DepartmentMaster({ setActivePage }) {
 
                     <div className="mt-3 space-y-1.5 text-xs text-slate-400">
                       <div className="flex items-center gap-2">
-                        <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                        <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                         <span>{dept.floor}</span>
                       </div>
                       {dept.head_of_dept && (
                         <div className="flex items-center gap-2">
-                          <Users className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                          <Users className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                           <span>HOD: <strong className="text-slate-300">{dept.head_of_dept}</strong></span>
                         </div>
                       )}
                       {dept.head_phone && (
                         <div className="flex items-center gap-2">
-                          <Phone className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                          <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                           <span className="font-mono text-[11px]">{dept.head_phone}</span>
                         </div>
                       )}
@@ -847,7 +865,7 @@ export default function DepartmentMaster({ setActivePage }) {
               <tbody className="divide-y divide-slate-800/60">
                 {rosterVisitors.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="p-8 text-center text-slate-500">
+                    <td colSpan={5} className="p-8 text-center text-slate-400">
                       No visitors currently authorized for {activeRosterDept?.name} ({selectedRosterDeptCode}). Use the Mapping Matrix tab to grant access.
                     </td>
                   </tr>
@@ -856,11 +874,17 @@ export default function DepartmentMaster({ setActivePage }) {
                     <tr key={v.id} className="hover:bg-slate-800/40 transition-colors">
                       <td className="p-4">
                         <div className="flex items-center gap-3">
-                          <img 
-                            src={v.photoUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'} 
-                            alt={v.fullName} 
-                            className="w-10 h-10 rounded-xl object-cover border border-slate-700 shrink-0"
-                          />
+                          {v.photoUrl ? (
+                            <img 
+                              src={v.photoUrl} 
+                              alt={v.fullName} 
+                              className="w-10 h-10 rounded-xl object-cover border border-slate-700 shrink-0"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 shrink-0">
+                              <Users className="w-5 h-5" />
+                            </div>
+                          )}
                           <div>
                             <span className="font-bold text-white block text-sm">{v.fullName}</span>
                             <span className="font-mono text-[10px] text-slate-400">{v.id}</span>

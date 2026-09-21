@@ -5,7 +5,7 @@
 
 import { toastService, notify } from './toastService';
 
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
 
 /**
  * Core unified request function
@@ -114,12 +114,21 @@ export const departmentsService = {
 
 // 5. Multi-Modal Biometrics Service (OpenCV + SCRFD + ArcFace)
 export const biometricsService = {
-  enroll: (personId, modality, rawPayloadBase64, deviceId = 'TERMINAL-USB-01') =>
+  enroll: (personId, modality, rawPayloadBase64, deviceId = 'TERMINAL-01', fingerCode = '') => 
     apiRequest('/biometrics/enroll', 'POST', {
       person_id: personId,
       modality: modality.toUpperCase(),
       raw_payload_base64: rawPayloadBase64,
-      device_id: deviceId
+      device_id: deviceId,
+      finger_code: fingerCode
+    }),
+  enrollBiometric: (personId, modality, rawPayloadBase64, deviceId = 'TERMINAL-01', fingerCode = '') => 
+    apiRequest('/biometrics/enroll', 'POST', {
+      person_id: personId,
+      modality: modality.toUpperCase(),
+      raw_payload_base64: rawPayloadBase64,
+      device_id: deviceId,
+      finger_code: fingerCode
     }),
   detectFace: (frameBase64) =>
     apiRequest('/biometrics/detect-face', 'POST', {
@@ -131,17 +140,36 @@ export const biometricsService = {
       visit_id: visitId,
       person_id: personId
     }),
-  verifyFingerprint: (rawPayloadBase64, visitId = null, personId = null, qualityScore = 85) =>
+  verifyFingerprint: (rawPayloadBase64, visitId = null, personId = null) =>
     apiRequest('/biometrics/verify-fingerprint', 'POST', {
       raw_payload_base64: rawPayloadBase64,
       visit_id: visitId,
-      person_id: personId,
-      quality_score: qualityScore
+      person_id: personId
     }),
   recognizeStreamFaces: (liveFrameBase64) =>
     apiRequest('/biometrics/recognize-stream-faces', 'POST', {
       live_frame_base64: liveFrameBase64
-    })
+    }),
+  getSecuGenStatus: () =>
+    apiRequest('/biometrics/secugen-status', 'GET'),
+  captureSecuGenFingerprint: (fingerCode = 'RI', quality = 50, timeout = 5000, personId = null) =>
+    apiRequest('/biometrics/secugen-capture', 'POST', {
+      finger_code: fingerCode,
+      quality: quality,
+      timeout: timeout,
+      person_id: personId
+    }),
+  getMfs110Status: () =>
+    apiRequest('/biometrics/mfs110-status', 'GET'),
+  customCaptureFingerprint: (fingerCode = 'RI', quality = 50, timeout = 5000, personId = null) =>
+    apiRequest('/biometrics/custom-capture', 'POST', {
+      finger_code: fingerCode,
+      quality: quality,
+      timeout: timeout,
+      person_id: personId
+    }),
+  toggleScannerLed: (state = true) =>
+    apiRequest('/biometrics/toggle-led', 'POST', { state })
 };
 
 // 6. Zone Access & Turnstiles Service
@@ -194,11 +222,17 @@ export const VmsBackendApi = {
   deleteDepartment: departmentsService.delete,
   mapUserDepartments: departmentsService.mapUserDepartments,
   getDepartmentUsers: departmentsService.getDepartmentUsers,
-  enrollBiometric: biometricsService.enroll,
+  enrollBiometric: biometricsService.enrollBiometric,
+  enroll: biometricsService.enrollBiometric,
   detectFace: biometricsService.detectFace,
   verifyFace: biometricsService.verifyFace,
   verifyFingerprint: biometricsService.verifyFingerprint,
   recognizeStreamFaces: biometricsService.recognizeStreamFaces,
+  getSecuGenStatus: biometricsService.getSecuGenStatus,
+  captureSecuGenFingerprint: biometricsService.captureSecuGenFingerprint,
+  getMfs110Status: biometricsService.getMfs110Status,
+  customCaptureFingerprint: biometricsService.customCaptureFingerprint,
+  toggleScannerLed: biometricsService.toggleScannerLed,
   getVisits: visitsService.getAll,
   getVisitById: visitsService.getById,
   createVisit: visitsService.create,

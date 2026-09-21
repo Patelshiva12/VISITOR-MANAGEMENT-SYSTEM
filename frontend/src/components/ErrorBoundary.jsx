@@ -33,7 +33,7 @@ export default class ErrorBoundary extends React.Component {
           </div>
           <button
             onClick={this.handleReset}
-            className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-lg shadow-sky-600/30 transition-all"
+            className="px-5 py-2.5 bg-sky-600 hover:bg-sky-950/600 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-lg shadow-sky-600/30 transition-all"
           >
             <RotateCcw className="w-4 h-4" /> Return to Public Portal
           </button>

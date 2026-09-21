@@ -23,6 +23,7 @@ import {
   Plus
 } from 'lucide-react';
 import { formatDateOnly } from '../utils/formatters';
+import Pagination from '../components/Pagination';
 
 export default function VisitorList({ setActivePage }) {
   const { visitors, visits, departments, toggleBlacklist, updateVisitor, mapUserDepartments } = useVms();
@@ -31,12 +32,24 @@ export default function VisitorList({ setActivePage }) {
   const [editingVisitor, setEditingVisitor] = useState(null);
   const [editFormData, setEditFormData] = useState({});
 
-  const filteredVisitors = visitors.filter(v => 
-    v.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (v.company && v.company.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    v.phone.includes(searchQuery) ||
-    v.id.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // 10 Items Per Page Pagination State
+  const ITEMS_PER_PAGE = 10;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  const filteredVisitors = visitors.filter(v => {
+    if (!v) return false;
+    const q = (searchQuery || '').toLowerCase().trim();
+    const fName = (v.fullName || v.name || '').toLowerCase();
+    const comp = (v.company || v.organization || '').toLowerCase();
+    const phone = String(v.phone || '');
+    const id = String(v.id || v.person_id || '').toLowerCase();
+
+    return fName.includes(q) || comp.includes(q) || phone.includes(q) || id.includes(q);
+  });
 
   const handleOpenEdit = (visitor) => {
     setEditingVisitor(visitor);
@@ -104,7 +117,7 @@ export default function VisitorList({ setActivePage }) {
 
       {/* Directory Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {filteredVisitors.map(v => {
+        {filteredVisitors.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map(v => {
           const visitorVisits = visits.filter(visit => visit.visitorId === v.id);
           const deptList = v.allowedDepartments || [];
 
@@ -122,16 +135,23 @@ export default function VisitorList({ setActivePage }) {
 
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
-                  <img
-                    src={v.photoUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
-                    alt={v.fullName}
-                    className={'w-14 h-14 rounded-2xl object-cover border-2 shrink-0 ' + 
-                      (v.isBlacklisted ? 'border-rose-500' : 'border-slate-700')}
-                  />
+                  {v.photoUrl ? (
+                    <img
+                      src={v.photoUrl}
+                      alt={v.fullName}
+                      className={'w-14 h-14 rounded-2xl object-cover border-2 shrink-0 ' + 
+                        (v.isBlacklisted ? 'border-rose-500' : 'border-slate-700')}
+                    />
+                  ) : (
+                    <div className={'w-14 h-14 rounded-2xl bg-gradient-to-tr from-sky-700 to-indigo-600 flex items-center justify-center text-white text-base font-black border-2 shrink-0 ' + 
+                      (v.isBlacklisted ? 'border-rose-500' : 'border-slate-700')}>
+                      {(v.fullName || 'V').split(' ').map(n => n[0]).filter(Boolean).slice(0, 2).join('').toUpperCase()}
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-white text-sm truncate block">{v.fullName}</span>
-                      <span className="font-mono text-[10px] text-slate-500">{v.id}</span>
+                      <span className="font-mono text-[10px] text-slate-400">{v.id}</span>
                     </div>
                     <span className="text-xs text-slate-400 font-medium block truncate">{v.company || 'Individual Visitor'}</span>
                     <span className="text-[11px] text-sky-400 font-mono block mt-0.5">{v.phone}</span>
@@ -159,41 +179,16 @@ export default function VisitorList({ setActivePage }) {
                     </div>
                   )}
 
-                  {/* Authorized Departments Access Badges (Temporarily Commented Out)
-                  <div className="pt-1 border-t border-slate-800 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-400 text-[10px]">Authorized Depts:</span>
-                      <button
-                        onClick={() => setActivePage && setActivePage('departments')}
-                        className="text-[9px] font-bold text-sky-400 hover:underline cursor-pointer flex items-center gap-0.5"
-                      >
-                        <Building2 className="w-2.5 h-2.5" /> Map Access
-                      </button>
-                    </div>
-                    <div className="flex flex-wrap gap-1">
-                      {deptList.length > 0 ? (
-                        deptList.map(code => (
-                          <span key={code} className="text-[9px] font-mono px-1.5 py-0.2 bg-sky-500/10 text-sky-300 border border-sky-500/20 rounded font-bold">
-                            {code}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="text-[9px] text-amber-400/80 italic">No depts assigned yet</span>
-                      )}
-                    </div>
-                  </div>
-                  */}
-
                   <div className="flex items-center justify-between pt-1 border-t border-slate-800">
                     <span className="text-slate-400">Biometric Modes:</span>
                     <div className="flex items-center gap-1.5">
-                      <span title="Facial Recognition" className={'p-1 rounded ' + (v.enrolledBiometrics?.face ? 'bg-sky-500/20 text-sky-400' : 'bg-slate-800 text-slate-600')}>
+                      <span title="Facial Recognition" className={'p-1 rounded ' + (v.enrolledBiometrics?.face ? 'bg-sky-500/20 text-sky-400' : 'bg-slate-800 text-slate-400')}>
                         <Camera className="w-3.5 h-3.5" />
                       </span>
-                      <span title="Fingerprint" className={'p-1 rounded ' + (v.enrolledBiometrics?.fingerprint ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-600')}>
+                      <span title="Fingerprint" className={'p-1 rounded ' + (v.enrolledBiometrics?.fingerprint ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400')}>
                         <Fingerprint className="w-3.5 h-3.5" />
                       </span>
-                      <span title="Iris Scan" className={'p-1 rounded ' + (v.enrolledBiometrics?.iris ? 'bg-purple-500/20 text-purple-400' : 'bg-slate-800 text-slate-600')}>
+                      <span title="Iris Scan" className={'p-1 rounded ' + (v.enrolledBiometrics?.iris ? 'bg-purple-500/20 text-purple-400' : 'bg-slate-800 text-slate-400')}>
                         <Eye className="w-3.5 h-3.5" />
                       </span>
                     </div>
@@ -237,6 +232,17 @@ export default function VisitorList({ setActivePage }) {
             </div>
           );
         })}
+      </div>
+
+      {/* 10-Item Responsive Pagination Footer */}
+      <div className="rounded-2xl overflow-hidden border border-slate-800">
+        <Pagination
+          currentPage={currentPage}
+          totalItems={filteredVisitors.length}
+          pageSize={ITEMS_PER_PAGE}
+          onPageChange={setCurrentPage}
+          itemLabel="visitors"
+        />
       </div>
 
       {/* EDIT VISITOR DETAILS MODAL */}
@@ -431,13 +437,13 @@ export default function VisitorList({ setActivePage }) {
                 <button
                   type="button"
                   onClick={() => setEditingVisitor(null)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl cursor-pointer"
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 font-bold rounded-xl cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl flex items-center gap-1.5 shadow-lg shadow-sky-600/30 cursor-pointer"
+                  className="px-5 py-2 bg-sky-600 hover:bg-sky-950/600 text-white font-bold rounded-xl flex items-center gap-1.5 shadow-lg shadow-sky-600/30 cursor-pointer"
                 >
                   <Save className="w-3.5 h-3.5" /> Save Changes
                 </button>
@@ -455,11 +461,17 @@ export default function VisitorList({ setActivePage }) {
           <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div className="flex items-center gap-3">
-                <img 
-                  src={selectedVisitor.photoUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'} 
-                  alt={selectedVisitor.fullName} 
-                  className="w-10 h-10 rounded-xl object-cover border border-slate-700"
-                />
+                {selectedVisitor.photoUrl ? (
+                  <img 
+                    src={selectedVisitor.photoUrl} 
+                    alt={selectedVisitor.fullName} 
+                    className="w-10 h-10 rounded-xl object-cover border border-slate-700"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-xl bg-sky-700 text-white flex items-center justify-center text-xs font-black border border-slate-700">
+                    {(selectedVisitor.fullName || 'V').split(' ').map(n => n[0]).filter(Boolean).slice(0, 2).join('').toUpperCase()}
+                  </div>
+                )}
                 <div>
                   <h4 className="font-bold text-white text-sm">{selectedVisitor.fullName}</h4>
                   <span className="text-xs text-slate-400">{selectedVisitor.company}</span>
@@ -486,7 +498,7 @@ export default function VisitorList({ setActivePage }) {
                     <span>{formatDateOnly(vt.scheduledTime)}</span>
                   </div>
                   <div className="flex justify-between items-center pt-1">
-                    <span className="text-[10px] text-slate-500 font-mono">Gate: {vt.gate || 'Main Gate 01'}</span>
+                    <span className="text-[10px] text-slate-400 font-mono">Gate: {vt.gate || 'Main Gate 01'}</span>
                     <span className={'px-2 py-0.5 rounded text-[10px] font-bold uppercase ' + 
                       (vt.status === 'CHECKED_IN' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-300')}>
                       {vt.status}
