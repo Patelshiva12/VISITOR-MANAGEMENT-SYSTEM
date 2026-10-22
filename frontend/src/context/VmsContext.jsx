@@ -255,15 +255,15 @@ export function VmsProvider({ children }) {
       purpose: visitData?.purpose || 'Spot Walk-In Check-In',
       scheduledTime: visitData?.scheduledTime || new Date().toISOString(),
       expectedDurationMins: Number(visitData?.expectedDurationMins || 60),
-      checkInTime: new Date().toISOString(),
+      checkInTime: null,
       checkOutTime: null,
-      status: 'CHECKED_IN',
+      status: 'APPROVED',
       allowedZones: visitData?.allowedZones || ['ZONE-01', 'ZONE-02'],
       allowedDepartments: allowedDepts,
-      gate: currentGate || 'Main Gate 01',
+      gate: visitData?.gate || currentGate || 'Main Gate 01',
       vehicleNumber: visitData?.vehicleNumber || 'N/A',
       laptopSerial: visitorData?.laptopSerial || 'NONE',
-      verifiedBiometrics: visitorData?.enrolledBiometrics?.fingerprint ? ['FACE', 'FINGERPRINT'] : ['FACE'],
+      verifiedBiometrics: [],
       enrolledFingers: enrolledFingers,
       notes: visitData?.notes || 'Spot Walk-In Registration'
     });
@@ -283,6 +283,8 @@ export function VmsProvider({ children }) {
         scheduled_time: newVisit.scheduledTime,
         expected_duration_mins: newVisit.expectedDurationMins,
         vehicle_number: newVisit.vehicleNumber,
+        gate: newVisit.gate,
+        status: 'APPROVED',
         allowed_zones: newVisit.allowedZones,
         allowed_departments: allowedDepts
       });

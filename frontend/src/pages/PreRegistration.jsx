@@ -37,6 +37,7 @@ export default function PreRegistration({ setActivePage, isPublicView = false })
     hostId: hosts[0]?.id || 'HST-101',
     purpose: '',
     expectedDurationMins: '60',
+    preferredGate: 'Main Gate 01',
     vehicleNumber: '',
     laptopSerial: '',
     notes: '',
@@ -131,6 +132,8 @@ export default function PreRegistration({ setActivePage, isPublicView = false })
         expectedDurationMins: formData.expectedDurationMins,
         vehicleNumber: formData.vehicleNumber,
         laptopSerial: formData.laptopSerial,
+        gate: formData.preferredGate || 'Main Gate 01',
+        allowedZones: ['ZONE-01', 'ZONE-02'],
         notes: formData.notes
       }
     );
@@ -147,10 +150,12 @@ export default function PreRegistration({ setActivePage, isPublicView = false })
         expected_duration_mins: Number(formData.expectedDurationMins) || 60,
         vehicle_number: formData.vehicleNumber,
         laptop_serial: formData.laptopSerial,
+        gate: formData.preferredGate || 'Main Gate 01',
+        allowed_zones: ['ZONE-01', 'ZONE-02'],
         notes: formData.notes,
         face_image_base64: formData.photoUrl
       });
-      console.log('[Backend API] Pre-registration saved in PostgreSQL successfully.');
+      console.log('[Backend API] Pre-registration saved in database successfully.');
     } catch (err) {
       console.log('[Backend API] Running in local offline mode.');
     }
@@ -170,7 +175,7 @@ export default function PreRegistration({ setActivePage, isPublicView = false })
       expectedDurationMins: formData.expectedDurationMins,
       status: 'PENDING',
       allowedZones: ['ZONE-01', 'ZONE-02'],
-      gate: 'Main Gate 01'
+      gate: formData.preferredGate || 'Main Gate 01'
     };
 
     setCreatedVisit(generated);
@@ -530,6 +535,23 @@ export default function PreRegistration({ setActivePage, isPublicView = false })
                   className="w-full bg-slate-950 text-xs pl-9 pr-3 py-2.5 rounded-xl border border-slate-700 text-white focus:outline-none focus:border-sky-500"
                 />
               </div>
+            </div>
+
+            {/* Preferred Security Entry Gate */}
+            <div className="sm:col-span-2">
+              <label className="text-xs font-semibold text-slate-300 block mb-1">
+                Preferred Security Entry Gate * (Designated Check-In Station)
+              </label>
+              <select
+                value={formData.preferredGate}
+                onChange={(e) => setFormData({ ...formData, preferredGate: e.target.value })}
+                className="w-full bg-slate-950 text-xs px-3 py-2.5 rounded-xl border border-slate-700 text-sky-400 font-bold focus:outline-none focus:border-sky-500"
+              >
+                <option value="Main Gate 01">🚪 Main Gate 01 (Central Security Terminal)</option>
+                <option value="North Gate 02">🚪 North Gate 02 (Logistics & Tech Terminal)</option>
+                <option value="VIP Lobby">🚪 VIP Lobby (Executive Suites & Boardrooms)</option>
+                <option value="All Gates">🌐 All Gates (Universal Multi-Gate Entry)</option>
+              </select>
             </div>
 
             <div className="sm:col-span-2">

@@ -211,11 +211,23 @@ export default function BiometricScannerModal({ visit, onComplete, onClose }) {
           // Find first matched person in current stream frame
           const firstMatched = streamRes.faces.find(f => f.matched);
           if (firstMatched) {
+            const vMatch = visits.find(v => 
+              v.id === firstMatched.visit_id || 
+              v.visitorId === firstMatched.person_id || 
+              v.visitorName?.toLowerCase() === firstMatched.name?.toLowerCase()
+            );
+            const vGate = vMatch?.gate || firstMatched.gate || 'All Gates';
+            const isGateAllowed = !vGate || vGate === 'All Gates' || vGate.toLowerCase() === (currentGate || '').toLowerCase();
+
             setFaceMatched(true);
-            setFaceScanStatus('SUCCESS');
+            setFaceScanStatus(isGateAllowed ? 'SUCCESS' : 'GATE_MISMATCH');
             setFaceMatchScore(firstMatched.confidence_score);
             setFaceLivenessScore(99.4);
-            setPrimaryMatchedFace(firstMatched);
+            setPrimaryMatchedFace({
+              ...firstMatched,
+              gate: vGate,
+              isGateAllowed
+            });
           } else {
             setFaceMatched(false);
             setFaceScanStatus('IDLE');
@@ -247,6 +259,15 @@ export default function BiometricScannerModal({ visit, onComplete, onClose }) {
       v.visitorName.toLowerCase() === face.name.toLowerCase()
     );
 
+    const visitorGate = targetVisit?.gate || face.gate || 'All Gates';
+    const isGateAllowed = !visitorGate || visitorGate === 'All Gates' || visitorGate.toLowerCase() === (currentGate || '').toLowerCase();
+
+    if (!isGateAllowed) {
+      toastService.error(`Gate Restriction: Visitor assigned to "${visitorGate}", but turnstile is "${currentGate}". Entry blocked.`, 'Gate Mismatch');
+      setShowOverrideBox(true);
+      return;
+    }
+
     if (!targetVisit) {
       targetVisit = {
         id: face.visit_id || `VST-2026-${Date.now().toString().slice(-4)}`,
@@ -262,7 +283,7 @@ export default function BiometricScannerModal({ visit, onComplete, onClose }) {
         scheduledTime: new Date().toISOString(),
         status: 'CHECKED_IN',
         checkInTime: new Date().toISOString(),
-        gate: currentGate,
+        gate: visitorGate || currentGate,
         allowedZones: ['ZONE-01', 'ZONE-02'],
         verifiedBiometrics: ['FACE']
       };
@@ -364,6 +385,16 @@ export default function BiometricScannerModal({ visit, onComplete, onClose }) {
             v.visitorName?.toLowerCase() === matchedName.toLowerCase()
           );
 
+          const visitorGate = targetVisit?.gate || verifyRes.gate || 'All Gates';
+          const isGateAllowed = !visitorGate || visitorGate === 'All Gates' || visitorGate.toLowerCase() === (currentGate || '').toLowerCase();
+
+          if (!isGateAllowed) {
+            setFingerScanStatus('GATE_MISMATCH');
+            toastService.error(`Gate Restriction: Visitor assigned to "${visitorGate}", current turnstile is "${currentGate}". Entry Blocked.`, 'Gate Mismatch');
+            logAudit('SECURITY_GATE_MISMATCH', `Fingerprint Recognized for ${matchedName} (${matchedId}), but Entry Blocked due to Gate Mismatch (Assigned: ${visitorGate}, Current: ${currentGate})`, 'WARNING', currentGate);
+            return;
+          }
+
           if (!targetVisit) {
             targetVisit = {
               id: verifyRes.visit_id || `VST-2026-${Date.now().toString().slice(-4)}`,
@@ -379,7 +410,7 @@ export default function BiometricScannerModal({ visit, onComplete, onClose }) {
               scheduledTime: new Date().toISOString(),
               status: 'CHECKED_IN',
               checkInTime: new Date().toISOString(),
-              gate: currentGate,
+              gate: visitorGate || currentGate,
               allowedZones: ['ZONE-01', 'ZONE-02', 'MAIN-LOBBY'],
               verifiedBiometrics: ['FINGERPRINT']
             };
@@ -522,7 +553,7 @@ export default function BiometricScannerModal({ visit, onComplete, onClose }) {
         scheduledTime: new Date().toISOString(),
         status: 'CHECKED_IN',
         checkInTime: new Date().toISOString(),
-        gate: currentGate,
+        gate: primaryMatchedFace.gate || currentGate,
         allowedZones: ['ZONE-01', 'ZONE-02'],
         verifiedBiometrics: ['FACE']
       };
@@ -545,13 +576,22 @@ export default function BiometricScannerModal({ visit, onComplete, onClose }) {
         scheduledTime: new Date().toISOString(),
         status: 'CHECKED_IN',
         checkInTime: new Date().toISOString(),
-        gate: currentGate,
+        gate: matchedFingerVisitor.gate || currentGate,
         allowedZones: ['ZONE-01', 'ZONE-02', 'MAIN-LOBBY'],
         verifiedBiometrics: ['FINGERPRINT']
       };
     }
 
     if (finalVisit) {
+      const visitorGate = finalVisit.gate || finalVisit.preferredGate;
+      const isGateAllowed = !visitorGate || visitorGate === 'All Gates' || visitorGate.toLowerCase() === (currentGate || '').toLowerCase();
+      
+      if (!isGateAllowed) {
+        toastService.error(`Gate Restriction: Visitor assigned to "${visitorGate}", current station is "${currentGate}". Entry blocked. Use Guard Override if authorized.`, 'Entry Blocked');
+        setShowOverrideBox(true);
+        return;
+      }
+
       checkInVisitor(finalVisit.id, verifiedModes);
       setActiveVisitForPass(finalVisit);
       setGatePassReady(true);
@@ -608,6 +648,15 @@ export default function BiometricScannerModal({ visit, onComplete, onClose }) {
     activeTab === 'FINGERPRINT' ? fingerMatched :
     irisMatched;
 
+  const matchedVisitObject = 
+    activeTab === 'FACE' ? (visits.find(v => v.visitorName?.toLowerCase() === primaryMatchedFace?.name?.toLowerCase()) || (primaryMatchedFace?.visit_id && visits.find(v => v.id === primaryMatchedFace.visit_id))) :
+    activeTab === 'FINGERPRINT' ? (visits.find(v => v.visitorName?.toLowerCase() === matchedFingerVisitor?.name?.toLowerCase()) || (matchedFingerVisitor?.personId && visits.find(v => v.visitorId === matchedFingerVisitor.personId))) :
+    visit;
+
+  const activeMatchedGate = matchedVisitObject?.gate || matchedVisitObject?.preferredGate || (activeTab === 'FACE' ? primaryMatchedFace?.gate : activeTab === 'FINGERPRINT' ? matchedFingerVisitor?.gate : null);
+
+  const isGateMismatch = isCurrentTabVerified && activeMatchedGate && activeMatchedGate !== 'All Gates' && activeMatchedGate.toLowerCase() !== (currentGate || '').toLowerCase();
+
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto no-print">
       <div className="bg-slate-900 border border-slate-700 rounded-2xl sm:rounded-3xl max-w-5xl w-full max-h-[94vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
@@ -621,9 +670,13 @@ export default function BiometricScannerModal({ visit, onComplete, onClose }) {
             <div className="min-w-0">
               <h3 className="font-extrabold text-xs sm:text-base text-white flex flex-wrap items-center gap-1.5 sm:gap-2">
                 <span>Live Turnstile Biometric Verification</span>
-                {isCurrentTabVerified ? (
+                {isCurrentTabVerified && !isGateMismatch ? (
                   <span className="text-[9px] sm:text-[10px] font-mono px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full flex items-center gap-1 shrink-0">
-                    <CheckCircle2 className="w-3 h-3" /> Identity Verified (Gate Unlocked)
+                    <CheckCircle2 className="w-3 h-3" /> Identity Verified (Gate Authorized)
+                  </span>
+                ) : isCurrentTabVerified && isGateMismatch ? (
+                  <span className="text-[9px] sm:text-[10px] font-mono px-2 py-0.5 bg-rose-500/20 text-rose-300 border border-rose-500/40 rounded-full flex items-center gap-1 shrink-0 animate-pulse">
+                    <ShieldAlert className="w-3 h-3 text-rose-400" /> Gate Mismatch (Entry Blocked at {currentGate})
                   </span>
                 ) : (
                   <span className="text-[9px] sm:text-[10px] font-mono px-2 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full flex items-center gap-1 shrink-0">
@@ -744,6 +797,17 @@ export default function BiometricScannerModal({ visit, onComplete, onClose }) {
                   const heightPercent = face.bbox_norm[3] * 100;
                   const isMatch = face.matched;
 
+                  // Find visitor details & verify gate
+                  const targetVisit = visits.find(v => 
+                    v.id === face.visit_id || 
+                    v.visitorId === face.person_id || 
+                    v.visitorName?.toLowerCase() === face.name?.toLowerCase()
+                  );
+                  const visitorGate = targetVisit?.gate || face.gate || 'All Gates';
+                  const isGateAllowed = !visitorGate || visitorGate === 'All Gates' || visitorGate.toLowerCase() === (currentGate || '').toLowerCase();
+                  const isMatchAndAllowed = isMatch && isGateAllowed;
+                  const isMatchButMismatch = isMatch && !isGateAllowed;
+
                   return (
                     <div
                       key={face.face_id ?? idx}
@@ -754,9 +818,11 @@ export default function BiometricScannerModal({ visit, onComplete, onClose }) {
                         height: `${Math.max(8, Math.min(95, heightPercent))}%`
                       }}
                       className={`absolute pointer-events-none rounded-2xl border-2 transition-all duration-150 ${
-                        isMatch
+                        isMatchAndAllowed
                           ? 'border-emerald-400 shadow-[0_0_35px_rgba(52,211,153,0.85)] ring-2 ring-emerald-400/40 bg-emerald-500/5'
-                          : 'border-rose-500 shadow-[0_0_35px_rgba(244,63,94,0.75)] ring-2 ring-rose-500/30 bg-rose-500/5'
+                          : isMatchButMismatch
+                          ? 'border-rose-500 shadow-[0_0_35px_rgba(244,63,94,0.85)] ring-2 ring-rose-500/40 bg-rose-500/10'
+                          : 'border-slate-500 shadow-[0_0_20px_rgba(148,163,184,0.3)] ring-1 ring-slate-500/20 bg-slate-500/5'
                       }`}
                     >
                       {/* 4 Corner Viewfinder Brackets */}
@@ -773,23 +839,29 @@ export default function BiometricScannerModal({ visit, onComplete, onClose }) {
 
                       {/* Top Mini Badge */}
                       <div className={`absolute -top-6 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider whitespace-nowrap shadow-lg ${
-                        isMatch ? 'bg-emerald-500 text-slate-950' : 'bg-rose-500 text-white'
+                        isMatchAndAllowed 
+                          ? 'bg-emerald-500 text-slate-950' 
+                          : isMatchButMismatch 
+                          ? 'bg-rose-500 text-white animate-pulse' 
+                          : 'bg-slate-700 text-slate-200'
                       }`}>
-                        {isMatch ? `✓ Verified (${face.confidence_score}%)` : '❌ Unregistered'}
+                        {isMatchAndAllowed 
+                          ? `✓ Verified • Gate Match (${face.confidence_score}%)` 
+                          : isMatchButMismatch 
+                          ? `⚠️ GATE MISMATCH • Assigned: ${visitorGate}` 
+                          : '❌ Unregistered Visitor'}
                       </div>
 
                       {/* Name Tag / Unknown Tag + Action Button */}
                       <div className="absolute top-[100%] mt-2 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 min-w-max pointer-events-auto z-20 animate-in fade-in zoom-in-95 duration-150">
-                        {isMatch ? (
+                        {isMatchAndAllowed ? (
                           <div className="bg-slate-950/95 backdrop-blur-md border border-emerald-500/80 text-white px-3 py-1.5 rounded-xl shadow-2xl flex flex-col items-center gap-1">
                             <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-300">
                               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                               <span className="font-extrabold">{face.name}</span>
                               <span className="text-[10px] font-mono text-emerald-400 font-normal">({face.confidence_score}%)</span>
                             </div>
-                            {face.company && (
-                              <span className="text-[9px] text-slate-400 font-normal">{face.company}</span>
-                            )}
+                            <span className="text-[9px] text-emerald-400 font-semibold font-mono">Gate Authorized: {currentGate}</span>
                             <button
                               type="button"
                               onClick={(e) => {
@@ -801,10 +873,34 @@ export default function BiometricScannerModal({ visit, onComplete, onClose }) {
                               <ShieldCheck className="w-3 h-3 text-slate-950" /> Check-In Now
                             </button>
                           </div>
-                        ) : (
-                          <div className="bg-slate-950/95 backdrop-blur-md border border-rose-500/80 text-white px-3 py-1.5 rounded-xl shadow-2xl flex flex-col items-center gap-1">
+                        ) : isMatchButMismatch ? (
+                          <div className="bg-slate-950/95 backdrop-blur-md border border-rose-500/80 text-white px-3 py-2 rounded-xl shadow-2xl flex flex-col items-center gap-1.5 max-w-[240px] text-center">
                             <div className="flex items-center gap-1.5 text-xs font-bold text-rose-300">
                               <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                              <span className="font-extrabold">{face.name}</span>
+                            </div>
+                            <span className="text-[10px] text-rose-300 leading-tight">
+                              Assigned: <strong className="text-white">{visitorGate}</strong><br/>
+                              Current Station: <strong className="text-amber-300">{currentGate}</strong>
+                            </span>
+                            <span className="text-[9px] text-rose-400 font-black uppercase tracking-wide">
+                              ⛔ Entry Blocked at this Gate
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setShowOverrideBox(true);
+                              }}
+                              className="mt-0.5 px-3 py-1 bg-amber-600 hover:bg-amber-500 text-white font-bold text-[10px] rounded-lg shadow flex items-center gap-1 transition-all cursor-pointer"
+                            >
+                              <AlertTriangle className="w-3 h-3" /> Supervisor Override
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="bg-slate-950/95 backdrop-blur-md border border-slate-700 text-white px-3 py-1.5 rounded-xl shadow-2xl flex flex-col items-center gap-1">
+                            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-300">
+                              <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                               <span>Unknown / Unregistered</span>
                             </div>
                             <button
@@ -1306,6 +1402,33 @@ export default function BiometricScannerModal({ visit, onComplete, onClose }) {
             </div>
           )}
 
+          {/* Gate Access Restriction Warning Banner */}
+          {isGateMismatch && (
+            <div className="p-3.5 sm:p-4 bg-rose-950/40 border border-rose-500/80 rounded-2xl text-xs space-y-2 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-rose-400 font-bold">
+                  <ShieldAlert className="w-4 h-4 shrink-0" />
+                  <span>GATE ACCESS RESTRICTION MISMATCH</span>
+                </div>
+                <span className="px-2 py-0.5 bg-rose-500 text-slate-950 rounded-full font-black text-[9px] uppercase tracking-wider">
+                  Entry Blocked
+                </span>
+              </div>
+              <p className="text-slate-300 text-[11px] leading-relaxed">
+                Visitor is authorized for <strong className="text-rose-300">{activeMatchedGate}</strong>, but scanning at station <strong className="text-amber-300">{currentGate}</strong>. Physical turnstile cannot be unlocked for mismatched gate without security supervisor override.
+              </p>
+              <div className="flex justify-end pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowOverrideBox(true)}
+                  className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-bold text-[10px] flex items-center gap-1.5 transition-colors cursor-pointer shadow"
+                >
+                  <AlertTriangle className="w-3 h-3" /> Security Supervisor Override...
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Dual Security Controls Matrix */}
           <div className="p-3 sm:p-3.5 bg-slate-950 rounded-2xl border border-slate-800 text-xs space-y-2">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
@@ -1389,13 +1512,23 @@ export default function BiometricScannerModal({ visit, onComplete, onClose }) {
               <RotateCcw className="w-3.5 h-3.5" /> Re-Arm Scanner
             </button>
 
-            {isCurrentTabVerified && (
+            {isCurrentTabVerified && !isGateMismatch && (
               <button
                 type="button"
                 onClick={handleGrantEntry}
                 className="px-4 sm:px-6 py-2 sm:py-2.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white text-xs font-bold rounded-xl shadow-lg shadow-emerald-600/30 flex items-center gap-2 transition-all animate-pulse cursor-pointer"
               >
                 <ShieldCheck className="w-4 h-4" /> Grant Entry & Issue Pass
+              </button>
+            )}
+
+            {isCurrentTabVerified && isGateMismatch && (
+              <button
+                type="button"
+                onClick={() => setShowOverrideBox(true)}
+                className="px-4 sm:px-6 py-2 sm:py-2.5 bg-rose-600/80 hover:bg-rose-500 text-white text-xs font-bold rounded-xl border border-rose-500/60 shadow-lg flex items-center gap-2 transition-all cursor-pointer"
+              >
+                <ShieldAlert className="w-4 h-4" /> Gate Mismatch (Override Needed)
               </button>
             )}
           </div>

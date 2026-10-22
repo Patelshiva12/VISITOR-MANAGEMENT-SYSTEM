@@ -41,6 +41,7 @@ export default function GuardKiosk() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('ALL'); // 'ALL' | 'INSIDE' | 'APPROVED' | 'PENDING'
   const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [selectedStationFilter, setSelectedStationFilter] = useState('THIS_STATION'); // 'THIS_STATION' | 'ALL_STATIONS'
   
   // 10 Items Per Page Pagination State
   const ITEMS_PER_PAGE = 10;
@@ -49,7 +50,7 @@ export default function GuardKiosk() {
   // Reset pagination to page 1 whenever filters change
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, activeTab, selectedCategory]);
+  }, [searchQuery, activeTab, selectedCategory, selectedStationFilter, currentGate]);
 
   // Modals
   const [verifyingVisit, setVerifyingVisit] = useState(null);
@@ -76,6 +77,14 @@ export default function GuardKiosk() {
     if (!matchesSearch) return false;
 
     if (selectedCategory !== 'ALL' && v.visitorCategory !== selectedCategory) return false;
+
+    // Station Gate Filter
+    if (selectedStationFilter === 'THIS_STATION') {
+      const vGate = v.gate || 'Main Gate 01';
+      if (vGate !== 'All Gates' && vGate.toLowerCase() !== currentGate.toLowerCase()) {
+        return false;
+      }
+    }
 
     if (activeTab === 'INSIDE') return v.status === 'CHECKED_IN';
     if (activeTab === 'APPROVED') return v.status === 'APPROVED';
@@ -173,8 +182,18 @@ export default function GuardKiosk() {
           ))}
         </div>
 
-        {/* Category & Search */}
-        <div className="flex items-center gap-2 w-full lg:w-auto">
+        {/* Category, Station & Search */}
+        <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+          {/* Station Filter */}
+          <select
+            value={selectedStationFilter}
+            onChange={(e) => setSelectedStationFilter(e.target.value)}
+            className="bg-slate-900 text-xs px-3 py-2 rounded-xl border border-slate-800 text-emerald-400 font-bold focus:outline-none"
+          >
+            <option value="THIS_STATION">🚪 Station: {currentGate} Only</option>
+            <option value="ALL_STATIONS">🌐 All Stations (Global View)</option>
+          </select>
+
           {/* Visitor Category Filter */}
           <select
             value={selectedCategory}
@@ -190,7 +209,7 @@ export default function GuardKiosk() {
           </select>
 
           {/* Search Input */}
-          <div className="relative flex-1 sm:w-72">
+          <div className="relative flex-1 sm:w-64">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
             <input
               type="text"
@@ -211,13 +230,13 @@ export default function GuardKiosk() {
             <thead className="bg-slate-950/80 text-slate-400 font-bold uppercase text-[10px] border-b border-slate-800">
               <tr>
                 <th className="p-4">Visitor Profile & Category</th>
-                <th className="p-4">Pass & Gate</th>
+                <th className="p-4">Pass & Assigned Gate</th>
                 <th className="p-4">Host & Purpose</th>
                 <th className="p-4">Status & Time</th>
                 <th className="p-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200">
+            <tbody className="divide-y divide-slate-800">
               {filteredVisits.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="p-8 text-center text-slate-400">
@@ -228,6 +247,8 @@ export default function GuardKiosk() {
                 filteredVisits.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map(visit => {
                   const elapsed = getElapsedMinutes(visit.checkInTime);
                   const isOverstay = visit.status === 'CHECKED_IN' && elapsed > visit.expectedDurationMins;
+                  const vGate = visit.gate || 'Main Gate 01';
+                  const isGateMatch = vGate === 'All Gates' || vGate.toLowerCase() === currentGate.toLowerCase();
 
                   return (
                     <tr key={visit.id} className="hover:bg-slate-800/40 transition-colors">
@@ -261,12 +282,32 @@ export default function GuardKiosk() {
                         </div>
                       </td>
 
-                      {/* Pass Details */}
+                      {/* Pass & Gate Details */}
                       <td className="p-4">
                         <span className="font-mono font-bold text-slate-200 block text-xs">{visit.passNumber}</span>
-                        <span className="text-[11px] text-sky-400 block">{visit.gate || currentGate}</span>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          {isGateMatch ? (
+                            <span className="text-[10px] font-semibold text-emerald-400 flex items-center gap-1 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                              {vGate}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold text-amber-300 flex items-center gap-1 bg-amber-500/15 px-1.5 py-0.5 rounded border border-amber-500/30" title={`Registered for ${vGate}. Mismatch at current gate!`}>
+                              ⚠️ {vGate}
+                            </span>
+                          )}
+                        </div>
+                        {visit.allowedZones && visit.allowedZones.length > 0 && (
+                          <div className="flex items-center gap-1 mt-1">
+                            {visit.allowedZones.slice(0, 3).map(z => (
+                              <span key={z} className="text-[9px] font-mono px-1 py-0.2 bg-slate-800 text-sky-300 rounded">
+                                {z}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                         {visit.vehicleNumber && visit.vehicleNumber !== 'N/A' && (
-                          <span className="text-[10px] text-slate-400 font-mono block">Veh: {visit.vehicleNumber}</span>
+                          <span className="text-[10px] text-slate-400 font-mono block mt-0.5">Veh: {visit.vehicleNumber}</span>
                         )}
                       </td>
 

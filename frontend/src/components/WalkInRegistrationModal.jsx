@@ -65,6 +65,8 @@ export default function WalkInRegistrationModal({ isOpen = true, onClose, onComp
     hostId: hosts[0]?.id || 'HST-101',
     purpose: 'Official Spot Discussion',
     expectedDurationMins: '60',
+    assignedGate: currentGate || 'Main Gate 01',
+    allowedZones: ['ZONE-01', 'ZONE-02'],
     vehicleNumber: '',
     laptopSerial: '',
     notes: 'Walk-In Spot Registration at Gate'
@@ -366,16 +368,6 @@ export default function WalkInRegistrationModal({ isOpen = true, onClose, onComp
     setAiTrainingMessage(`✓ 10 Multi-Angle Cropped Photos Auto-Captured for ID ${registeredPerson.person_id}!`);
     logAudit('BIOMETRIC_CAPTURED', `10 Multi-angle cropped photos auto-captured for ${registeredPerson.name} (${registeredPerson.person_id})`, 'SUCCESS', currentGate);
     
-    // Auto-enroll face template immediately upon face capture completion (not on gate pass click)
-    const primaryFace = capturedGallery[0]?.dataUrl;
-    if (primaryFace) {
-      try {
-        await VmsBackendApi.enrollBiometric(registeredPerson.person_id, 'FACE', primaryFace, 'CAMERA-01');
-      } catch (e) {
-        console.warn('Face biometric enroll note:', e);
-      }
-    }
-
     stopLiveCamera();
     isCapturingRef.current = false;
   };
@@ -509,7 +501,8 @@ export default function WalkInRegistrationModal({ isOpen = true, onClose, onComp
         purpose: formData.purpose,
         expectedDurationMins: formData.expectedDurationMins,
         vehicleNumber: formData.vehicleNumber,
-        allowedZones: ['ZONE-01', 'ZONE-02'],
+        gate: formData.assignedGate || currentGate || 'Main Gate 01',
+        allowedZones: formData.allowedZones || ['ZONE-01', 'ZONE-02'],
         laptopSerial: formData.laptopSerial,
         notes: formData.notes
       };
@@ -535,11 +528,11 @@ export default function WalkInRegistrationModal({ isOpen = true, onClose, onComp
           hostDept: hosts.find(h => h.id === formData.hostId)?.department || 'R&D',
           purpose: formData.purpose,
           scheduledTime: new Date().toISOString(),
-          status: 'CHECKED_IN',
-          checkInTime: new Date().toISOString(),
-          gate: currentGate,
-          allowedZones: ['ZONE-01', 'ZONE-02'],
-          verifiedBiometrics: hasFingerprint ? ['FINGERPRINT'] : ['FACE']
+          status: 'APPROVED',
+          checkInTime: null,
+          gate: formData.assignedGate || currentGate || 'Main Gate 01',
+          allowedZones: formData.allowedZones || ['ZONE-01', 'ZONE-02'],
+          verifiedBiometrics: []
         });
       }
     } catch (err) {
@@ -758,6 +751,67 @@ export default function WalkInRegistrationModal({ isOpen = true, onClose, onComp
                         />
                       </div>
                     </div>
+
+                    {/* Assigned Security Entry Gate (Single Select) */}
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                        Assigned Entry Security Gate * (Strict Gate Enforcement)
+                      </label>
+                      <select
+                        value={formData.assignedGate}
+                        onChange={(e) => setFormData({ ...formData, assignedGate: e.target.value })}
+                        className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-sky-400 font-bold focus:outline-none focus:border-sky-500"
+                      >
+                        <option value="Main Gate 01">🚪 Main Gate 01 (Central Security Terminal)</option>
+                        <option value="North Gate 02">🚪 North Gate 02 (Logistics & Tech Terminal)</option>
+                        <option value="VIP Lobby">🚪 VIP Lobby (Executive Suites & Boardrooms)</option>
+                        <option value="All Gates">🌐 All Gates (Universal Multi-Gate Entry)</option>
+                      </select>
+                    </div>
+
+                    {/* Authorized Security Zones Selection (Temporarily Commented Out) */}
+                    {/*
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-300 mb-1.5">
+                        Authorized Security Zones (Permitted Access)
+                      </label>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {[
+                          { id: 'ZONE-01', label: 'ZONE-01: Main Reception & Lobby', badge: 'Public' },
+                          { id: 'ZONE-02', label: 'ZONE-02: General Office & Meeting', badge: 'Standard' },
+                          { id: 'ZONE-03', label: 'ZONE-03: R&D Embedded Systems Lab', badge: 'Restricted' },
+                          { id: 'ZONE-04', label: 'ZONE-04: Data Center & Server Vault', badge: 'High-Sec' }
+                        ].map(z => {
+                          const isChecked = (formData.allowedZones || []).includes(z.id);
+                          return (
+                            <button
+                              type="button"
+                              key={z.id}
+                              onClick={() => {
+                                const current = formData.allowedZones || [];
+                                const updated = isChecked
+                                  ? current.filter(id => id !== z.id)
+                                  : [...current, z.id];
+                                setFormData({ ...formData, allowedZones: updated.length ? updated : ['ZONE-01'] });
+                              }}
+                              className={`px-2.5 py-1.5 rounded-xl border text-left text-[11px] flex items-center justify-between transition-all cursor-pointer ${
+                                isChecked
+                                  ? 'bg-sky-500/10 border-sky-500/40 text-sky-300 font-bold'
+                                  : 'bg-slate-900/60 border-slate-800 text-slate-500 hover:border-slate-700'
+                              }`}
+                            >
+                              <span className="truncate">{z.label}</span>
+                              <span className={`text-[9px] px-1.5 py-0.2 rounded font-mono ml-1 ${
+                                isChecked ? 'bg-sky-500/20 text-sky-300' : 'bg-slate-800 text-slate-500'
+                              }`}>
+                                {isChecked ? '✓' : '+'}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    */}
                   </div>
                 </div>
 
